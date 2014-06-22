@@ -1,0 +1,17 @@
+2013/06/30
+
+malloc 分配内存
+realloc 重新分配内存 原先数据不丢失,可以加大内存，或者减少内存
+
+库,
+	静态库  生成后是完全拷贝代码, 所以生成后, 静态库删除,可执行文件也能运行
+			1.gcc -c a.c 
+			    gcc -c b.c  生存a.o b.o目标文件
+			2.ar cr libjtk.a a.o	b.o    ar 生成静态库, cr中c 为创建, r为插入目标文件 (a.o,b.o)   静态库名字前必须是lib,后缀是 .a
+			3.gcc -o main main.c -L -ljtk   生成可执行文件 -L表示使用静态库    -l表示静态库   jtk为库名
+	动态库 如果把.so删除，则程序无法执行
+			1.gcc -c a.c
+				gcc -c b.c 
+			2. gcc -shared -fPIC -o libhello.so   -shared表明为动态库   -fPIC表示与地址无关
+			3.将 libhello.so复制到根目录的lib文件夹中
+			4.gcc main.c -lhello -o main;

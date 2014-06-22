@@ -1,0 +1,60 @@
+2014/01/11
+
+audio/WM9714.pdf  6410.pdf
+mainboard.pdf 2页
+GPD0~4
+6410 1151
+
+AC_PCMDATA 写FIFO
+内存->6410(arm->ac97)->wm9714(数字->模拟)->扬声器
+
+[sa@localhost arm]$ pwd
+/home/sa/arm
+[sa@localhost arm]$ du -sh Track1.wav 
+50M	Track1.wav
+
+20M == 20*1024*1024 =20971520
+
+//if 输入 of 输出 bs block size , count 次数 只截取一次bolck size 大小
+[sa@localhost arm]$ dd if=Track1.wav of=1.wav bs=20971520 count=1
+记录了1+0 的读入
+记录了1+0 的写出
+20971520字节(21 MB)已复制，0.200273 秒，105 MB/秒
+[sa@localhost arm]$ ll
+-rwxr-xr-x 1 sa sa  52318000 1月   4 00:47 Track1.wav
+-rw-rw-r-- 1 sa sa  20971520 1月  11 10:44 1.wav
+[root@localhost arm]# cp 1.wav /tftpboot/
+
+tftp 50008000 1.wav
+0x14 -> 20 
+nand erase 40000 1400000 
+nand write 50008000 40000 1400000
+
+raw wav   原始音频
+
+6410 381 11 DMA CONTROLLER
+
+384 通用DMA/有权限的SDMA 选择正确的下标 DMA1 6
+391 配置DMA通道 LLI DMA任务描述地址 每次传输完会有一个中断,
+392 寄存器 里面没数字的是8个通道共用的，有数字则是特定通道用
+393 通道选择// 我们用0，可以自己选择
+399 DMACConfiguration [0] 控制器使能
+401 DMACCxLLI 任务描述符地址 [0] 0为系统总线   1位外设
+    DMACCxControl [31] 搬完中断
+    [25] 0系统总线 1外设总线
+    [23:21]目标宽度 下面有表格 看内存和寄存器谁的位宽大 寄存器32
+402 线/宽/传输大小
+404 TransferSize [24:0] 传输次数
+405 DMACCxConfiguration [18] 是否忽略DMA请求
+    [15] 0 屏蔽
+    [13:11] 流控制 Transfer Type 看下方表格
+    [9:6] 目标外设编号 如果是到内存,就无所谓 ac97 是6
+   
+第三章 system controll
+158 硬件使用的控制器 DMA/SDMA
+ SDMA_SEL [22]
+
+64位 long long
+/** 自己开发,看手册,看时钟源, */
+
+

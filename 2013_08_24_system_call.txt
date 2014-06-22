@@ -1,0 +1,38 @@
+2013/08/24
+
+	ls /etc | wc -w
+	ps 进程信息
+	pstree 进程关系
+	www.kernel.org下载源码
+
+	系统调用与系统相关,而标准io 则只要支持C，则可以通用
+
+	1.utime
+	2.man 2 mkdir 创建文件夹 创建一个空文件下也会有 . 和 ..俩文件
+	3.man 2 unlink	删除文件，即删除硬连接
+	4.man remove 删除文件
+	5.man opendir ---- man 3 readdir 打开目录 --- 读取目录
+	6.rewinddir 回头dir指针
+	7.seekdir 目录指针跳动
+	8.chdir change working directory
+	9.getcwd get current working directoroy
+	10.lstat get file status
+	11. get_current_dir_name(void)
+	12.ulimit     可以查看stack size 栈空间
+	13.man syscalls  系统调用
+	系统调用比库函数效率低
+//标准库
+	标准输出为全缓冲(满了fflush)和行缓冲(遇上换行fflush)
+	标准报错 为 不缓冲
+	14.man 3 fopen
+	15.strace -c ./printf.c  查看程序中的系统调用
+	16.man setbuf (设置char *buf为NULL)则无缓冲
+		man setvbuf 可以设置全缓冲,行缓冲,不缓冲
+	17.man 3 fread 
+	18.man getline 返回一行数据
+	19.man fgets  input of characters and strings
+		man fputs output of characters and strings
+	20.atoi  将字符转int
+	21.fprintf  sprintf
+	22.man ftell
+

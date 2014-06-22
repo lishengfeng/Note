@@ -1,0 +1,159 @@
+2013/12/14
+每条指令四个字节
+cpu 模式
+上电以后的模式
+架构 上电 复位 reset异常 使处理器进入SVC模式
+进入异常模式
+ 主动 在特权模式下通过修改cpsr可以切换模式
+ 被动 在一些电信号触发或者特殊指令执行时
+
+	54页  ARM_Architecture_Reference_Manual.pdf	/*后面的地址是发生该异常时去执行的地址，异常向量表*/
+		Undefined instructions 未定义异常
+		Software interrupt 软中断异常
+		Prefetch Abort()  预取异常
+		Data Abort 数据异常 段错误
+		IRQ  电信号异常
+		FIQ  电信号异常      
+	异常向量表 放置异常处理程序   55页 硬件过程
+	异常返回指令  ARM_Architecture_Reference_Manual.pdf 43页看寄存器
+		stmfd sp!,{r0-r12,lr} //将r0-r12 ->栈
+		ldmfd sp!,{r0-r12,pc}^ //出栈  其中^作用是 spsr->cpsr
+
+	发生异常之后进入异常模式,栈使用的是异常模式的栈(因为寄存器也变了)
+
+		subs r0,r0,#4 //目标不是pc s表示影响标志位
+		subs pc,r0,#4 //目标是pc s表示 spsr->cpsr即 cpsr=spsr  (system和user模式下没有spsr寄存器)
+		movs r0,#0 //表示影响标志位
+		movs pc,lr //pc=lr cpsr=spsr
+
+//异常处理
+1.异常向量表
+	向量表能够跳转到处理程序
+	处理程序 保护 处理 返回
+
+2.异常的栈在异常发生之前要准备好		
+	切换模式 2.1古老
+			mrs r0,cpsr
+			bic r0,#0x1f
+			orr r0,#0x1b
+			msr cpsr,r0   /*以上是切换到Und异常 */
+
+			mrs r0,cpsr
+			bic r0,#0x1f
+			orr r0,#0x1b
+			msr cpsr,r0   /*以上是切换到Und异常 */
+		2.2 V6版本后 cps /*得在SVC权限下，user下会段错误*/　　//arm11或以上版本可以使用
+			特权下可以切换模式
+			cps #0x13 切换到SVC
+			cps #0x1b 切换到und
+		   控制cpsr 的ＡＩＦ
+			cpsie a 使能data abort
+			cpsie i 使能IRQ异常
+			cpsie aif 使能data abort. irq. fiq
+			cpsie if 使能　irq.fiq
+			cpsid if 禁止　irq.fiq
+			cpsid i 禁止　IRQ
+			cpsie ai,#0x13 切换到SVC 同时使能data abort . irq
+			cpsid if,#0x1b　切换到und 同时禁止 irq.fiq
+3.异常触发
+
+	执行过的指令
+	正在执行的指令　
+	将要执行的指令   /*该条指令的地址被存在lr中*/
+	将要执行的指令＋４
+
+1.vim start.S
+=================================
+        .align 2
+        .global _start
+        .text
+_start:
+        b reset
+        b und    //这个指令的地址刚好就是undefine异常发生时，执行的地址
+
+reset:
+        mov r0,#0x70000000
+        orr r0,#0x13
+        mcr p15,0,r0,c15,c2,4
+
+        ldr r0,=0x7e004000
+        mov r1,#0
+        str r1,[r0]
+
+        mov sp,#0x2000   //这个的sp是SVC的，因为这之前不会有未定义异常，所以在这里初始化异常的栈
+
+	
+	mrs r0,cpsr  //取值
+        bic r0,#0x1f //清零
+        orr r0,#0x1b //切换到UND
+        msr cpsr,r0  //赋值
+	
+	mov sp,#0x1500 //这是UND的sp,地址随便写，不要超过8k不要覆盖代码段
+
+	mrs r0,cpsr //取值
+        bic r0,#0x1f //清零
+        orr r0,#0x13 //切换回SVC
+        msr cpsr,r0 //赋值
+
+        bl main
+und:
+	stmfd sp!,{r0-r12,lr}
+	mrs r0,cpsr  //这样r0就被当作第一个参数传给了do_und
+        bl do_und  
+        ldmfd sp!,{r0-r12,pc}^  //得看稳定这个ps是否需要 -#4 有些指令有偏移
+
+=================================
+vim main.c
+================================
+//函数传参四个按照r0,r1,r2,r3的顺序一一对应,如果超过则自己需要作压栈操作
+void do_und(unsigned long data)
+{
+        uart_printf("%s cpsr.M %x\n",__FUNCTION__,data&0x1f);   //__FUNCTION__　编译器自动给替换为函数名
+}
+
+int main()
+{
+        int i;
+        clock_init();
+        uart_init();
+
+        __asm__ __volatile__(
+                "mrs r0,cpsr\n"
+                "mov %0,r0\n"
+                :"=&r"(i)
+                :
+                :"r0"
+        );
+
+        uart_printf("%s cpsr.M %x\n",__FUNCTION__,i&0x1f);
+
+        __asm__ __volatile__(
+                "nop\n"　　//等价于 mov r0,r0
+                ".word 0x77777777\n"  //触发异常
+                "nop\n"
+        );
+
+        while(1){
+                uart_puts(uart_gets());
+        }
+}
+
+================================
+上电后在SVC做初始化　初始化user的栈
+初始化完成后　进入user模式　运行测试代码
+在user模式下触发swi异常　　360页显式了swi的使用范围
+/*参考swi文件夹下的代码*/
+/usr/include/asm/unistd.h
+
+/smdk6410/arch/arm/include/asm/unistd.h  内核源码下的系统调用
+
+//初始化user的栈不能直接切换到user否则就切换不会来了，但是system和user是共用sp所以可以切换到system
+//汇编末尾添加　b . @死循环,防止跑飞
+
+同步异常
+异步异常　异常发生和当前执行的指令无关　IRQ FIQ
+	各种能发出中断信号的硬件连接中断控制器，控制器告诉cpu，cpu处理告诉中断控制器->再去通知对应的硬件->该硬件的这个中断信号的处理函数执行
+	IRQ默认ＶＥ是０所以发生该中断信号时跳到18 ARM1176　２２７页　ＶＥbit 0 reset value
+
+作业
+	看看S3C6410 向量中断控制器409页

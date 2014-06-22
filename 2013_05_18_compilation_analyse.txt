@@ -1,0 +1,66 @@
+2013/05/18
+汇编
+	1. gcc -S function.c
+
+
+        .file   "function.c"
+        .text
+.globl add
+        .type   add, @function
+add:
+        pushl   %ebp
+        movl    %esp, %ebp
+        subl    $16, %esp
+        movl    12(%ebp), %eax
+        addl    8(%ebp), %eax
+        movl    %eax, -4(%ebp)
+        movl    -4(%ebp), %eax
+        leave
+        ret
+        .size   add, .-add
+.globl foo
+        .type   foo, @function
+foo:
+        pushl   %ebp
+        movl    %esp, %ebp
+        subl    $24, %esp
+        movl    $32167, 4(%esp)
+        movl    $1234, (%esp)
+        call    add
+        movl    %eax, -4(%ebp)
+        movl    $56789, %eax
+        leave
+        ret
+        .size   foo, .-foo
+        .ident  "GCC: (GNU) 4.1.2 20080704 (Red Hat 4.1.2-52)"
+        .section        .note.GNU-stack,"",@progbits
+
+实际函数段为pushl -> ret   
+%* 都是寄存器         ...如 %eax 
+系统指针  负数向下移,  正数向上移
+首先压栈一个返回地址，然后下移pushl %ebp 栈指针 , movl %esp,%ebp  将%esp 真指针移动到　％ebp位置!
+sub为减,　　$24, %esp  esp％ 下移六位.  以4为一个单位.
+movl $32167,4(%esp) 在 ％esp上端一位 赋值 32167， %esp自身值不变
+
+* 每次调用一个函数都会先压栈一个返回地址以用于返回调用函数;
+
+指针
+
+＆取地址, *取该地址的值
+普通指针可以加减整数,函数指针因为不知道大小，不可以做指针计算
+普通指针可以相减来算指针间的 个数，但不可相加
+
+ 数组
+arr <=> &arr[0]
+所以传数组能改变数组本身.
+如果传数组中的某个值则只是值传递 
+
+char *a = "abcd"  则a的值可能无法在改变，因为不确定该字符串的地址里的值是否有权限操作；
+char a[5]="abcd" 则可以改变字符串中某个字符的值，因为数组就是分配一个有权限的空间给程序员。
+
+strcpy 复制字符串 
+strcat 连接字符串
+strcmp 比较字符串
+
+
+

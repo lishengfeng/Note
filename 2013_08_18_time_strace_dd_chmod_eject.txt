@@ -1,0 +1,30 @@
+2013/08/18
+	1。命令前加time可显示命令时间  1.总时间(包括其他进程占用时间) 2.用户态时间 3.系统调用时间
+	strace -c timer 命令跟踪系统进程
+	dd if=/dev/zero of=bigfile bs=1024 count=409600 if为原路径 of为相对路径, bs为字符流大小,count为文件大小
+	推荐流大小 4096
+	
+	dup(int fileds)/dup2(int newfiledes,int fileds)
+	free
+	ls -i 显示i节点
+	sycn fsycn fdatasycn
+	stat get file status
+	chmod 4777 file  其中第一位，表示三个数 分别为suid/sgid/sticky
+		suid只能给可执行文件设置(除去脚本)获得该文件所属用户的权限 可用chmod u+s filename添加
+		sgid 如果设置了，则该文件属于这个目录的所属组而不是自己的组  可用chmod g+s filename添加
+		sticky 如果设置了，该目录下的所有文件只能更改自己的文件，而不能更改其他用户的文件 可用chmod a+t filename添加
+		可以查询 chmod --help
+			ls -ld /tmp/ 
+	ls -ld filename
+	umask 如umask(0066)  <=> 当前权限&~0066
+	chown 修改用户所属的组
+	ln /etc/tmp /kkk      
+	readlink kkk查看链接的文件
+	文件操作系统  dumpe2fs -ob /dev/sda1
+        文件系统处理  vim /usr/src/dernels/2.6.18~~~~include/linux/ext3_fs.h
+
+	which eject
+	rpm -qf /usr/bin/eject
+	下载源码
+	
+	

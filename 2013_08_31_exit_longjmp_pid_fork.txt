@@ -1,0 +1,30 @@
+2013/08/31
+	man 3 exit   系统调用,系统帮你处理一些东西
+	man 2 exit   直接退出,不做任何其他处理
+	man atexit    调用exit是执行该函数的参数中的函数
+	man on_exit   和atexit类似,参数中的函数参数更多一下(可传int或者void * 自动匹配)
+	man remove   删除一个文件
+
+	地址从高到低   内核->环境变量->栈->(堆)free->BSS(未初始化数据)->DATA(已初始化数据)->txt(文本段)->NULL(0x00000000)
+
+	env  全局变量
+	man environ 环境变量数组指针
+	man getenv
+	内存分两部分(buddy,slab)
+	buddy 分页管理内存
+	slab 分阶梯管理内存  按照字节格式化,一般用于内核
+	gcc -static main.c
+	goto 函数内部跳转
+	man setjmp   函数之间跳转 和longjmp配套用
+	man longjmp
+	ulimit -a 查看所有限制 可以用ulimit (参数,如:-t) 值设置限制
+	getrlimit  系统限制函数
+	setrlimit  系统限制函数 其中有个renice为优先级越nice,优先级越低
+	man getpid 获得进程pid
+	man getuid 
+	id 查看当前用户信息  id - print user identity
+	chown - change file owner and group
+	man getgid gid获得
+	man fork          sfork - create a child process
+	man 2 wait 等待别的子进程的状态改变,并回收该进程
+	execl, execlp, execle, execv, execvp - execute a file

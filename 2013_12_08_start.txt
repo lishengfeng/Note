@@ -1,0 +1,190 @@
+2013/12/08
+ 时钟入口，由引脚控制,
+ 用cpu和arm核相同源(用一个锁相簧产生)则时钟是同步的，用不同源则时钟是异步的
+	
+	如果内存是同步的话，最好时钟也用同步的,否则需要等到同步才能执行
+ 原理图   122页 CLOCK ARCHITECTURE
+ 先将后面的频率配好，在将开始部分频率切换到高频
+	137，142页  锁相簧的工作模式   一般lock time 改成最大值保证倍频后能稳定工  锁相簧内存地址
+   Fin是12M ，在我们的6410是固定的
+	126页看输出范围
+	初始化硬件，所有都打开 150页
+
+ 139页找地址，声明头文件
+－－－－－－－－－－－－－－－－－－－－－－－
+#ifndef __LED_H__
+
+#define APLL_LOCK  *(volatile unsigned long*)0x7E00F000 
+#define MPLL_LOCK  *(volatile unsigned long*)0x7E00F004 
+#define APLL_CON   *(volatile unsigned long*)0x7E00F00C 
+#define MPLL_CON   *(volatile unsigned long*)0x7E00F010 
+#define CLK_SRC    *(volatile unsigned long*)0x7E00F01C 
+#define CLK_DIV0   *(volatile unsigned long*)0x7E00F020 
+#define HCLK_GATE  *(volatile unsigned long*)0x7E00F030
+#define PCLK_GATE  *(volatile unsigned long*)0x7E00F034 
+#define MISC_CON   *(volatile unsigned long*)0x7E00F838 
+#define OTHERS     *(volatile unsigned long*)0x7E00F900 
+
+#define GPMCON     *(volatile unsigned long*)0x7F008820 
+#define GPMDAT     *(volatile unsigned long*)0x7F008824 
+#define GPMPUD     *(volatile unsigned long*)0x7F008828 
+#define GPNCON     *(volatile unsigned long*)0x7F008830 
+#define GPNDAT     *(volatile unsigned long*)0x7F008834 
+
+
+#endif
+－－－－－－－－－－－－－－－－－－－－－－－
+ 
+[sa@dba clock]$ touch clock.c
+[sa@dba clock]$ pwd
+/media/GHOST/linux/Linux_3/hardwareControl/clock
+[sa@dba clock]$ vim clock.c 
+－－－－－－－－－－－－－－－－－－－－－－－
+#include "regs.h"
+void clock_init(void)
+{
+        //141,142
+        APLL_LOCK = 0xffff;
+        APLL_CON  = (1<<31)|(266 << 16)|(3<<8)|(1<<0);
+        OTHERS|=(1<<6);//看图
+        MISC_CON &=~(1<<19);
+        CLK_DIV0 =(0<<0)|(1<<9)|(1<<8)|(3<<12);
+        //150
+        HCLK_GATE =~0;
+        PCLK_GATE =~0;
+        CLK_SRC |= 1;
+}
+
+－－－－－－－－－－－－－－－－－－－－－－－
+[sa@dba clock]$ vim main.c 
+－－－－－－－－－－－－－－－－－－－－－－－
+int main()
+{
+        int i;
+        clock_init();
+        led_init();
+        while(1){
+                for(i=0;i<4;i++){
+                	led_on(i);
+                	delay(5);
+                	led_off(i);
+                	delay(5);
+                }
+        }
+}
+
+
+－－－－－－－－－－－－－－－－－－－－－－－
+[sa@dba clock]$ vim Makefile 
+－－－－－－－－－－－－－－－－－－－－－－－
+OBJS := start.o main.o led.o delay.o clock.o
+－－－－－－－－－－－－－－－－－－－－－－－
+将clock.o 补上
+测试 
+
+串口
+  DB9用的比较普遍              5 线为接地
+	2 ,3   为数据线         TXD 发送端，RXD接收端  所以只要三条线就够了
+ 	 31 UART  1080页
+通过引脚控制UART
+	原理图 mainboard 7页 
+        原理图   X_uRXD0/GPA0   4页         
+         X_uTXD0/GPA1
+
+引脚功能配置6410       312页 GPIO 操作引
+[root@dba uatr]# vim regs.h 
+－－－－－－－－－－－－－－－－－－－－－－－
+GPACON 0x7F008000  //追加
+－－－－－－－－－－－－－－－－－－－－－－－
+1089页 串口的地址位置
+1092页 UCONn
+1100页 UTXH0 写的位置
+1101 页 31.6.11 UART BAUD RATE CONFIGURE REGISTER  //波特率配置
+
+vim 需要在前面加一样的东西 －－>  ctrl+v ,将需要加的部分选中  shift + i, 输入需要的字符 Esc*2 就同步了
+
+[root@dba uatr]# vim regs.h 
+－－－－－－－－－－－－－－－－－
+#define GPACON     *(volatile unsigned long*)0x7F008000      //配置引脚 
+#define ULCON0     *(volatile unsigned long*)0x7F005000      //线控制器   传输 /*Parity Mode(校验模式) */
+#define UCON0      *(volatile unsigned long*)0x7F005004      // 控制器  控制工作模式
+#define UFCON0     *(volatile unsigned long*)0x7F005008 		 //FIFO控制器 64位缓存
+#define UMCON0     *(volatile unsigned long*)0x7F00500C      //调制解调器 控制器
+#define UTRSTAT0   *(volatile unsigned long*)0x7F005010      //发送的状态
+#define UERSTAT0   *(volatile unsigned long*)0x7F005014 
+#define UFSTAT0    *(volatile unsigned long*)0x7F005018 
+#define UMSTAT0    *(volatile unsigned long*)0x7F00501C 
+#define UTXH0      *(volatile unsigned long*)0x7F005020     //发送的值
+#define URXH0      *(volatile unsigned long*)0x7F005024 
+#define UBRDIV0    *(volatile unsigned long*)0x7F005028 	   //波特率要用的参数部分的整数部分
+#define UDIVSLOT0  *(volatile unsigned long*)0x7F00502C     //波特率要用的参数部分的小数部分经过转变而得到
+－－－－－－－－－－－－－－－－－
+[root@dba hardwareControl]# cp -r clock/ uart
+[root@dba hardwareControl]# cp regs.h uart/
+[root@dba hardwareControl]# cd uart/
+[root@dba uart]# vim uart.c
+－－－－－－－－－－－－－－－－－
+#include "regs.h"
+void uart_init(void)
+{
+        GPACON &=~0xff;
+        GPACON |= 0x22;
+
+        ULCON0=3;
+        UCON0 =(1<<2)|(1<<0);
+        UFCON0 = 0;
+        UMCON0 = 0;
+        UBRDIV0 = 34;
+        UDIVSLOT0 =0xdfdd;
+}
+void uart_putchar(char c)
+{
+        UTXH0=c;
+        while(!(UTRSTAT0&(1<<2)));
+}
+char uart_getchar(void )
+{
+        while(!(UTRSTAT0&1));
+        return URXH0;
+}
+－－－－－－－－－－－－－－－－－
+[root@dba uart]# vim main.c
+－－－－－－－－－－－－－－－－－
+int main()
+{
+        int i;
+        clock_init();
+        uart_init();
+        for(i=0;i<4;i++){
+                uart_putchar('U');
+                uart_putchar('A');
+                uart_putchar('R');
+                uart_putchar('T');
+                uart_putchar('\n');
+                uart_putchar('\r');
+        }
+        while(1){
+                uart_putchar(uart_getchar());
+        }
+}
+－－－－－－－－－－－－－－－－－
+/*在没有系统下, /n只是换行，/r才是回车即回到最前端*/
+[root@dba uart]# vim Makefile
+－－－－－－－－－－－－－－－－－
+OBJS := start.o main.o led.o delay.o clock.o uart.o
+－－－－－－－－－－－－－－－－－
+
+/** 一般头文件在/usr/include 下 */
+
+拓展
+[root@dba uart]# vim uart.c 
+---------------------------
+
+---------------------------
+[root@dba uart]# vim main.c 
+---------------------------
+
+---------------------------
+
+
+

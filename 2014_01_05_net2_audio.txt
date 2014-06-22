@@ -1,0 +1,69 @@
+2014/01/05
+ [sa@localhost NET]$ pwd
+ /home/sa/arm/NET
+ [sa@localhost NET]$ make server_send
+ cc     server_send.c   -o server_send
+先把板子和pc连上，环境准备好
+dm9000 如果激活正常,图标链接正常
+ [sa@localhost NET]$./server_send
+//此时收不到
+arp -n
+将板子绑定192.168.1.30
+#arp -s 192.168.1.30 00:11:22:33:44:55
+./server_send
+抓包，最前面是地址，中间是值，后面是ACSII码，有些无法解释位ACSII
+如ip 对应 45 4是版本v4,5表示5*4长度
+ip校验不用切换大小端，其他超过一个字节的在放数据时都要进行大小端切换
+裸板没有memcpy,如果用局部变量,会调用memcpy赋值
+所以用全局变量或者自己实现memcpy //参考memcpy
+void *memcpy(void *dest, const void *src, size_t n);
+{
+	//判断空指针
+	for(int i=0;i<n;i++){
+		*dest++=*src++;
+	}
+}
+全局是数据段里，已经写死了
+发消息,vim main.c
+用抓包器看
+/*========================
+pwd
+/root/linux-3.5/include/linux
+vim if_ether.h
+vim ip.h
+vim udp.h
+vim if_arp.h
+========================*/
+eth->arp/ip->udp/tcp
+arp测试
+arm端用程序发包
+可以去提取boot-loader 移植
+pc端用./server_send //先把发包注释,否则会因为会记录mac ，不再发arp请求了
+
+audio
+ ADC将虚拟信号转换成数字信号，放到内存，再放到固态存储
+测试数据,采样率44100
+mp3->库(libmad)/硬件解码->1.放到特定内存
+			  2.open
+dev/dsp(ictl配置)->linux内核->驱动->声卡(将特定内存解码的数字写道声卡，出声音)
+
+WM9713/9714
+AC97 V2.0 //不用我们配置
+音频/视频数据大,为了释放cpu，所以使用DMA //direct memory access 它来操作内存
+
+内存->cpu->coder->耳机
+
+main.pdf 2页
+HPL左声道
+HPR右声道
+//我们板子用了加大音量的接线SPKL/SPKR
+core.pdf 4页
+	GPD
+6410 1140页35 AC97 CONTROLLER
+	1150 状态切换,到active,写数据就播放,LP(low power)关闭
+
+1152
+AC_GLBCTRL 
+PCM out transfer mode [13:12] PIO是cpu搬运,DMA DMA搬运
+//如果是DMA，就不需要配置中断了,只需要配置DMA就行
+

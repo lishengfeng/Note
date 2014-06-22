@@ -1,0 +1,160 @@
+2013/12/28
+480*272
+计算机表示颜色
+像素 格式
+RGB565 16bit red 5 green 6 blue 5
+RGB888 32bit 8 red 8 green 8blue 8 (能支持的最大的)
+ARGB
+
+YCC YUV
+YCbCr YCrCb CrCbY
+Y C C 8bit
+Y 亮度 Cb blue Cr red
+
+我们的为并行RGB接口,有关其他硬件接口的都不管
+图像 frame
+  16bit
+  short a[][] a[0][0] 为左上
+
+mainboard.pdf原理图 第五页左边
+
+5～28为传递像素的数据线每个8条
+
+每经过一个VCLK 传递一个像素值
+
+LHSYNC 横向同步，换行时发一个脉冲
+LVSYNC 纵向同步，换列时发一个脉冲
+LVDEN 像素使能，他有效才能真正让像素显示
+LCD_PWREN LCD电源使能 //但是在6410好像无效,我们的已经焊接在高位了
+GPF14调节背光,高电位就是不调节
+
+左边黄色方块为电阻
+VD 24条,像素的数据现
+
+coreboard.pdf 第五页 有复用引脚 GPI0~15 GPJ0~7
+
+6410.pdf 455页 14 DISPLAY CONTROLLER
+D.C控制器
+1.DMA从内存读数据60Hz，并传输给LCD
+2.localbus postprocessor 一般用于解码,图像伸缩,空间变换
+   如看电影 MFC用于解码动态，JPEG解码静态     
+
+The DISPLAY controller supports up to 5 overlay image windows.
+Overlay image windows support various color format, 16 level alpha blending, color key, x-y position control, soft
+scrolling, variable window size, and etc.
+
+//16 level alpha blending 16等级透明混合
+//color key 抠除上层的某个区域像素 必须用RGB888才有用
+
+The DISPLAY controller supports various color formats such as RGB (1BPP to 24 BPP), and YCbCr 4:4:4(only
+local bus).
+
+如果是 YCbCr 格式的需要用Postprocessor转换
+
+455 工作图
+FIFO local用
+AHB MASTER从CPU取值
+AHB Slave I/F 给CPU值
+
+458 
+Post Proc -> postProcessor
+Camera I/F 照相预览
+双缓存 加速显示，通过缓存切换
+
+459 像素点所占位置，存储方式
+因为DMA 去取数据都是32位
+
+465 16BPP display(1+555)
+(BSWP = 0, HWSWP = 1)
+必须寄存器中BSWP=0,HWSWP=1,半字交换
+否则按照下面的像素高地位存放方式,每个像素就高地位颠倒了
+
+472 混合方式
+473 最后一段些了混合的计算方式, ARx/16 所以有16等级的混合
+477 抠颜色 COLVAL (0Xff0000) RGB  R被抠了
+478 透明度和抠颜色合并起来用
+485 RGB接口  时序图的前提是底下寄存器的值符合条件
+	VDEN低位不显示像素
+    要配置时间,操作，边缘等
+490 SEL_BYPASS[3] 必须只为0
+491 需要正常显示LCD时，要配置的参数1,2 其他看寄存器
+
+VIDCON0 video配置VD
+ INTERLACE_F  RGB都是逐行 progressive
+ VIDOUT 00 RGB接口
+ PNRMODE 串行RGB 00
+ CLKSEL_F 配置时钟,我们用HCLK 00
+ CLKDIR 时钟分频,LCD能承受的VCLK由LCD决定,在CLKVAL_F有说明
+ CLKVAL_F 分频值 // >1
+ CLKVALUP 在CLKVAL_F变化时，更新的时机
+ VCLKFREE 1是始终存在 0为受 ENVID控制
+ ENVID_F 看Note 和ENVID同时控制，一般我们都为1或都为0
+
+VIDCON1 
+ FSTATUS 只读，奇偶
+ ICLK 边缘配置，根据硬件 //参考日立 13~14页 极性
+ IHSYNC，IVSYNC，IVDEN 极性，高使能为normal,如果时序图低使能则需要翻转
+ EN601 关了省电,于我们没关
+ 
+
+VIDTCON0 配时序
+ 帧
+VIDTCON1
+ 行
+VIDTCON2
+ 分辨率
+WINCON0 第0层
+ ENLOCAL 通路 0
+ BUFSTATUS 只读，当前表示的帧
+ BUFAUTOEN 双缓存切换方式，我们没有1 H/W这条现，所以配0
+ BITSWP/BYTSWP/HAWSWP 半字交换 //565需要 888不需要
+ BURSTLEN 每次DMA取的长度，多少都行，取少费电
+ BPPMODE_F 像素模式 888 1011
+ ENWIN_F 是否显示该层
+
+//WINCON0没有透明度
+506 WINDOW 0位置寄存器
+VIDOSD0A / VID0SD0B 显示的像素 0,0 - 480*272
+
+513 配buffer地址 全屏显示可以不用配，在虚拟时用,如放大图片移动窗口
+窗口0,1有双缓存，其他都是单缓存 
+VIDW00ADD0B0 第一个数00为层,第二个数0为表示起始地址(1,为结束地址),最后一个0表示缓存号
+
+buffer长度为分辨率*字节所占字数
+
+vim regs.h
+//列对齐剪切  ctrl+v选中要复制的列，x,剪切，在要粘贴的第一行p
+vim lcd.c
+
+我们用的是日立的，得按照日立的时序图
+datasheet/audio/日立.pdf
+13页 Clock cycle 常规TYP是 9 所以 VCLK = 9;  VIDCON0 (14<<6) //在末尾
+看14页时序图
+VIDCON1 =(1<<6)|(1<<5);横纵需要翻转，因为是低电位有效
+6410 485页 和 日立.pdf 配合找寄存器所需要的时间
+
+VBPD+1 = tvb(TYP 2) 
+//极性翻转了，所以可能和6410的图略微有差别
+VFPD+1 =tvf(TYP 2)
+VSPW+1 = tvp(TYP 10)
+
+HBPD+1 = thb(TYP 2)
+HFPD+1 = thf(>2)
+HSPW+1 = thp(41)
+
+*((unsigned short*)0x50000000 + y*480 +x) = color; //short*
+长度为2字节,一个像素刚好2个字节,所以直接+y*480+x
+VIDW00ADD1B0 = 0x50000000 + 480*272*2;//565一个像素占16位,所以16/8 = 2;
+
+
+ot@dba LCD]# pwd
+/home/sa/arm/LCD
+tftp 
+nand erase
+nand write 
+vim main.c
+===========================
+//nand_read(0x50000000,0x40000,0x100000);
+===========================
+
+BMP 位图就是二进制加头文件

@@ -1,0 +1,246 @@
+2013/11/24
+
+[root@dba /]# mkdir rootfs
+[root@dba /]# chmod 777 rootfs/
+[root@dba /]# vim /etc/exports 
+/*
+/uplooking *(rw,sync,no_root_squash)
+/rootfs *(rw,sync,no_root_squash)
+*/
+[root@dba /]# service nfs restart
+[root@dba busybox-1.13.3]# cd _install/
+[root@dba _install]# cp -rv * /rootfs/
+[root@dba rootfs]# ls
+bin  linuxrc  sbin  usr
+[root@dba rootfs]# mkdir lib
+[root@dba rootfs]# mkdir dev
+[root@dba rootfs]# mkdir etc
+[root@dba rootfs]# mkdir proc
+[root@dba rootfs]# mkdir sys
+[root@dba rootfs]# ls
+bin  dev  etc  lib  linuxrc  proc  sbin  sys  usr
+
+//lib  从工具链里的lib拷贝过去
+[root@dba lib]# pwd
+/opt/4.3.2/arm-none-linux-gnueabi/libc/lib
+[root@dba lib]# cp -rv * /rootfs/lib/
+//绑定当下nfs后启动提示没有console
+[root@dba dev]# pwd
+/rootfs/dev
+[root@dba dev]# mknod console c 5 1   （mknod创建节点即设备文件, console为文件名,c为字符设备,5为主设备号,1为次设备号,主设备号决定类型和驱动，次设备号区分相同设备）
+//绑定当下nfs后启动提示
+cannot run '/etc/init.d/rcS': No such file or directory
+
+can't open /dev/tty2: No such file or directory
+can't open /dev/tty3: No such file or directory
+can't open /dev/tty4: No such file or directory
+//参考本地pc机端的 特定tty的类型 
+[root@dba dev]# pwd
+/dev
+[root@dba dev]# ls -l tty2
+crw------- 1 root root 4, 2 11-24 09:01 tty2
+－－－－－
+[root@dba dev]# pwd
+/rootfs/dev
+[root@dba dev]# mknod tty2 c 4 2
+[root@dba dev]# mknod tty3 c 4 3
+[root@dba dev]# mknod tty4 c 4 4
+
+//添加 /etcinit.d/rcS
+
+[root@dba etc]# pwd
+/rootfs/etc
+[root@dba etc]# mkdir init.d
+[root@dba etc]# cd init.d/
+[root@dba init.d]# touch rcS
+[root@dba init.d]# chmod +x rcS 
+[root@dba init.d]# vim rcS 
+
+－－－－－－－－－－－－－－－－－－
+在pc端  输入 mount命令找到 proc 和 sysfs （虚拟在内存的） 设备写none
+proc on /proc type proc (rw)
+sysfs on /sys type sysfs (rw)
+－－－－－－－－－－－－－－－－－－
+＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
+#!/bin/sh
+
+mount -t proc none /proc
+mount -t sysfs none /sys
+
+mdev -s 
+＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝~                
+(mdev根据proc和sys创建所有节点, -s表示所有)
+(proc 和 sysfs共同管理设备，sysfs比较乱但是分类比较全，proc查找接口比较旧，但是缺一不可)
+
+这样一个基本的文件系统就实现了
+//如果想要图形界面，需要图形库，一个可执行文件来启动这个图形画面，在配置中将这个可执行文件添加进去启动
+＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
+
+arm 架构
+	版本
+	armxx
+	cortex-
+
+	我们用的是ARMv6架构下的arm1176
+
+	架构手册
+	具体芯片编程 arm1176jzf -s （位于/home/sa/arm/smdk6410/datasheet/arm）
+
+	数据类型
+		cpu 访问内存时的数据位宽
+		8 bit
+		16 bit
+		32 bit
+		硬件上通过指令来控制
+	大小端
+		arm大端 小端都支持
+		上电后默认为小端
+		可以通过指令切换
+		a=0xaabbccdd
+
+		int a;
+		a=0xaabbccdd;
+		char *array=&a;
+		printf("%x\n",array[0]);
+		小端 则显式dd  大端则显式aa  即内存的存放方式
+
+	处理器工作模式
+		在处理不同的事件的时候,cpu工作于不同的模式
+		经典arm架构 7种模式   /home/sa/arm/smdk6410/datasheet/arm/ARM_Architecture_Reference_Manual.pdf   里的A2.2章 41页
+		user 用户模式   所有的用户态进程(包括root用户)运行时cpu所处于的模式
+		SVC 管理模式  内核代码允许的模式 例如 内核线程 系统调用
+		UND 未定义模式  当cpu运行到一条指令集之外的一个指令时，会使cpu进入该模式，处理未定义模式用
+		ABT 终止模式  指令预取失败 数据访问失败
+		IRQ 中断模式  处理中断请求
+		FIQ 快速中断  高速速率传输用
+		SYS 系统模式  运行特权等级的系统任务
+
+		user 硬件特权最低的模式
+		剩下的六种模式都属于特权模式特权模式中出去system剩下的五种都是异常模式 
+
+	寄存器 A2.3章节诶
+		cpu内部存取指令操作数或者结果
+		三十七个寄存器
+		一种模式  R0－r14
+			R15 别名PC
+					程序计数器
+					将要被执行的那条指令的地址
+			R14 别名 LR link
+					链接寄存器
+					在进行函数调用或者发生异常切换
+					LR用来保存PC 如果连续调用 LR不够用就放在内存的栈里
+			R13 SP  栈指针
+					栈类型  属性1（空栈 E 满栈 F  (是指SP所指向那里有没有值，空则可以压栈) ）属性2(递增 A 递减 D)
+							所以类型有2＊2=4种 EA ED FA FD  
+					C语言用的是FD
+			R12  IP 保存SP
+			R11  FP frame pointer  FP和SP之间是一个帧 ，每个函数一个帧，每次调用增加一个帧
+				帧从高位到低位 LR->FR ->局部变量 ->[子函数参数],   通过FP的偏移来找到局部变量 
+				//全局变量是用地址确定的，因为全局变量因为就是定的
+
+			r0-r10 放数据
+									
+			cpsr  current  当前程序状态的寄存器  A2.5章  49页
+			spsr  save     用来保存cpsr  在发生异常切换时硬件自动完成保存 (spsr = cpsr)	
+		在对于能够影响cpsr的指令的前提下
+				N 如果指令执行结果为负 N＝1；如果为零或者正数 则N＝0
+				Z 结果为0  Z=1 否则 Z=0
+				C 一个寄存器能存 32bit
+					如果r0 = 0xffffffff
+						r1=1
+					r2 = r1+r0   加法有进位  C ＝ 1；
+					减法 有借位           C ＝ 0；
+					移位                         C ＝ 移出去的位
+				V 符号位溢出位
+				E 大端小端的标记  但是不能影响大端下端，只能通过指令改变大端小端
+				A I F
+				interrupt disable
+				A = 1 禁止 data abort  禁止数据异常
+				I = 1 禁止 IRQ异常		 禁止电位异常
+				F = 1 禁止FIQ异常               
+				T J  标志位 ，状态切换需要用指令   A2.5.8
+				0    0   表示cpu 位于ARM状态
+				1    0  表示cpu 位于Thumb状态
+				0   1   表示cpu 位于Jazelle
+				1    1  保留    （ARMv7 Thumb-ee）
+					ARM状态  －－－－运行arm指令集 所有寄存器都可以访问
+					Thumb状态  －－－运行thumb指令集 指令位数16bit 部分寄存器可以被访问
+										寄存器位宽改变，只有分支指令可以条件执行
+					Jazelle －－－－运行java字节码
+				M 位 决定了cpu的运行模式	
+				CPSR［4：0］ M   A2.5.7   52页
+					表示cpu当前的工作模式
+					在特权模式下修改M可以切换硬件模式  Usr只能读
+
+－－－－－－－－－－－－－－－－－－
+	cortex-A9
+	arm9TDMI
+	arm920T 
+	arm720T
+
+	arm1176
+		CPU r0-r15 cpsr spsr
+		协处理器 CP15 （Core process) C0~C15
+
+	指令操作目标
+	ARM状态的指令都是32 bit RISC  精简指令集
+
+	内嵌汇编
+		
+	数据传送
+		mov r0,r1  ==  r0=r1;
+		mov r1,#10 ==  r1=10; 立即数前必须有＃
+	运算
+	位操作
+	移位
+	分支
+	比较 条件执行
+	改变处理器模式
+	swi指令
+	load / store 在cpu和内存之间传递数据
+		单寄存器  32bit 16bit 8bit
+		多寄存器  栈   数据块
+
+＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
+用交叉编译器编译 arm板子运行
+
+pc端
+[root@dba asm]# pwd
+/rootfs/asm
+[root@dba asm]# touch Makefile
+[root@dba asm]# vim Makefile
+－－－－－－－－－－－－－－－
+CC := arm-linux-gcc
+CFLAGS += -mcpu=arm1176jzf-s
+－－－－－－－－－－－－－－－ 
+第一条指定 编译器
+第二条 中间不能有空格  是指用arm-linux-gcc编译时添加的参数
+[root@dba asm]# vim mov.c
+－－－－－－－－－－－－－－－
+#include <stdio.h>
+int main(void)
+{
+        int out,out1,in = 10;
+        //out = 12; out1 = in;
+        __asm__ __volatile__(
+                "mov r0,#12\n"
+                "mov %0,r0\n"
+                "mov %1,%2\n"
+                :"=&r"(out),"=&r"(out1)
+                :"r"(in)
+                :"r0"
+        );
+        printf("out %d out1 %d\n",out,out1);
+        return 0;
+}
+－－－－－－－－－－－－－－－
+__asm__ 表示内嵌汇编
+__volatile__ 表示不让编译器优化
+前三条是指令
+后三条有冒号部分  第一行为 输出，第二号为输入，第三行为保护被破坏的变量
+％0 ％1  ％ 2对应的是 从上到下从左到右  ％0 对应out %1 对应out1 ％2对应in
+变量前都有约束 "=&r"  ＝表示输出  如果改为 + 则是既输出又输入   &表示不用同一个寄存器存值，r表示找一个寄存器等价 
+
+		 	  
+					
+

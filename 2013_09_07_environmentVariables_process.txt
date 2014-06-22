@@ -1,0 +1,34 @@
+2013/09/07
+	system - execute a shell command
+	getlogin, getlogin_r, cuserid - get user name
+	man 2  times - get process times
+	bash - GNU Bourne-Again SHell  如果要学bash命令
+	开机顺序  /boot/grub/stage1->stage2
+			/etc/init.d
+
+	/环境变量的配置脚本,(按照顺序)
+	vim /etc/profile
+	vim ~/.bash_profile
+	vim ~/.bashrc
+	vim /etc/bashrc
+
+	setpgid, getpgid, setpgrp, getpgrp - set/get process group
+	setsid - creates a session and sets the process group ID
+	命令+&移至后台
+		jobs看当前后台进程
+			kill %3杀掉后台前面为3的进程
+	fg 把后台的带+的放置前面
+	ctrl+z 将当前的放置后台 但状态变成stop
+	bg %3 将后台3 从stop变成running
+	kill -l 查看当前系统支持的信号  0号信号用于检查进程是否存在
+		1,SIGHUP 挂起－－－一般用于重新启用配置,不退出
+		15,SIGTERM 默认打断信号————终断 如ps ax->kill 49793
+		2,SIGINT interupt  中断
+			echo $? 查看退出返回值 信号为128+信号id
+		17,SIGCHLD 子进程终止时返回给主进程
+		9,SIGKILL 内核用终止进程,不可被预设处理
+		19,SIGSTOP 内核用暂停进程,不可被预设处理
+ 	signal - ANSI C signal handling
+	man 7 signal 查看信号的宏定义
+	系统调用已经处理了重入
+	普通函数 如果设计到信号处理,或者多线程处理,则最好用函数中带_r的函数

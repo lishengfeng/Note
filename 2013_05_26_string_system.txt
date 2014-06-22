@@ -1,0 +1,33 @@
+2013/05/26
+
+位字段（位域）
+
+不同机器的位序不一致
+
+必须和结构体一起用
+
+struct {
+	unsigned int a : 1;
+	unsigned int b : 2;
+	unsigned int c : 1;
+}
+表示a只占了一个位
+
+我们环境下int 和char 都是有符号的. 位数只有一位时只能表示0和－1，即高位表示负数
+
+标准库
+	1.stdio.h
+	2.stdlib.h
+	3.string.h /*把所有函数看一遍 */
+
+md5sum 文件1  文件2 如果校验码一致，则基本一样
+
+echo $? 查看上个命令的返回值
+
+int main(void)
+{
+	system("ls");
+	return 0;
+}
+
+system("命令")调用shell命令

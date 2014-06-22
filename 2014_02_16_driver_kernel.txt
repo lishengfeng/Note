@@ -1,0 +1,218 @@
+2014/02/16
+ 下载内核  kernel.org
+ 硬件->引导->kernel->根
+ 1.kernel源码
+  系统下的内核 /usr/src/kernels/ 实际位置
+  当前运行的内核 /lib/modules/2.6.32-358.el6.x86_64/build/
+    kernel (和平台无关,一般不改)
+    arch (和平台有关)  
+      arch/arm/kernel (和平台有关的kernel)
+      arch/arm/mach....  (关于注册信息) arch/arm/plat... (设备信息)
+    drivers 操作寄存器和中断，使用kernel提供的接口
+       input (输入设备)
+       video(显示设备)
+       media(多媒体设备)
+       mtd(半导体单元)
+       usb(USB主控制器)
+    sound  声卡驱动	 
+  uname -a 显示全部 -r 显示版本
+
+  Makefile 
+    改 arch 变量
+  make menuconfig (如果打不开,1.配置没配好 2.屏幕分辨率太小)
+
+ 红帽6 
+  /boot/grub
+ [sa@localhost grub]$vim grub.conf
+ 编辑启动选项
+ 
+ /lib/modules/2.6.32-358.el6.x86_64
+ Makefile 根据.config来编译
+ 从 /home/sa/linux_kernel/linux-2.6.28_smdk6410/arch/arm/configs
+这里的的配置中拷贝过去
+
+ /home/sa/linux_kernel/linux-2.6.28_smdk6410
+ make menuconfig
+ [sa@localhost linux-2.6.28_smdk6410]$ cp smdk6410_config .config
+
+  vim Makefile
+  193行 ARCH :=arm   arm后面没空格
+  CROSS_COMPILE   := arm-linux-
+  [sa@localhost linux-2.6.28_smdk6410]$ make -j4 //-j4 多线程
+
+------------------------------------------------
+//升级自己内核
+先下载好新的内核
+ cp /boot/config-linux-xxxx .config  将旧的复制给新的做参考
+ make menuconfig  版本2.6.2 ->2.6.3 需要改系统支持旧版本文件
+ make
+ make moudules_install
+ make install
+------------------------------------------------
+
+关于make menuconfig
+
+写一个自定义的Kconfig
+------------------------------------------
+[sa@localhost drivers]$ pwd
+/home/sa/linux_kernel/linux-2.6.28_smdk6410/drivers
+[sa@localhost drivers]$ mkdir test
+[sa@localhost drivers]$ vim Kconfig
+-------------
+menuconfig MY_TEST
+        bool "my test menu"
+        help
+         "just for test menuconfig"
+if MY_TEST
+
+config MY_TEST01
+        bool "mytest 01"
+config MY_TEST01_F
+        int "for my test01"
+        depends on MY_TEST01
+        default 10
+
+
+config MY_TEST02
+        tristate "mytest 02"
+choice
+
+prompt "select one"
+depends on MY_TEST02
+default MY_CH02
+ 
+configMY_CH01
+        bool "my choice 01"
+config MY_CH02
+        bool "my choice 02"
+config MY_CH03
+        bool "my choice 03"
+endchoice
+
+endif
+------------
+
+------------------------------------------
+模块
+
+[sa@localhost arm]$ pwd
+/home/sa/linux_kernel/linux-2.6.28_smdk6410/arch/arm
+[sa@localhost arm]$ vim Kconfig
+可以在末尾添加 source "drivers/test/Kconfig" 
+
+mkdir /linux/module
+cd /linux/module
+touch Makefile test.c
+=========
+Makefile
+---------------------
+obj-m :=test.o
+---------------------
+test.c
+---------------------
+#include <linux/init.h>
+#include <linux/module.h>
+
+static int __init test_init(void)
+{
+        printk("hello kernel\n"); //printk 内核打印消息的函数
+        return 0;
+}
+
+static void __exit test_exit(void)
+{
+        printk("bye kernel\n");
+}
+
+module_init(test_init);//声明入口
+module_exit(test_exit);//声明出口
+MODULE_LICENSE("GPL"); //添加许可
+---------------------
+==========
+
+cd /home/sa/linux_kernel/linux-2.6.28_smdk6410   //到内核源码下
+[root@localhost linux-2.6.28_smdk6410]# pwd
+/home/sa/linux_kernel/linux-2.6.28_smdk6410
+
+[root@localhost linux-2.6.28_smdk6410]# make M=/linux/module modules  
+  CC [M]  /linux/module/test.o
+  Building modules, stage 2.
+  MODPOST 1 modules
+  CC      /linux/module/test.mod.o
+  LD [M]  /linux/module/test.ko
+
+在开发板上安装 insmod test.ko
+
+//也可用当前系统下的内核来编译，则可跑在当前系统下
+[root@localhost linux-2.6.28_smdk6410]# cd
+/lib/modules/2.6.32-358.el6.x86_64/build/
+[root@localhost build]# pwd
+/lib/modules/2.6.32-358.el6.x86_64/build
+[root@localhost build]# make M=/linux/module modules
+[root@localhost build]# cd /linux/module/
+[root@localhost module]# ls
+Makefile  modules.order  Module.symvers  test.c  test.ko  test.ko.unsigned
+test.mod.c  test.mod.o  test.o
+[root@localhost module]# pwd
+/linux/module
+[root@localhost module]# file test.ko
+test.ko: ELF 64-bit LSB relocatable, x86-64, version 1 (SYSV), not stripped
+[root@localhost module]# insmod test.ko    /** 安装
+如果不是当前目录则写绝对路径 */
+[root@localhost module]# dmesg  /*打印内核信息*/
+dmesg -C 清空
+lsmod 查看模块
+rmmod test 卸载模块 /*任何地方都能卸载模块 写test.ko 或者test. 都能删除*/
+
+清除
+[root@localhost linux]# cd /lib/modules/2.6.32-358.el6.x86_64/build/
+[root@localhost build]# pwd
+/lib/modules/2.6.32-358.el6.x86_64/build
+[root@localhost build]# make M=/linux/module/ clean
+  CLEAN   /linux/module//.tmp_versions
+  CLEAN   /linux/module//Module.symvers /linux/module//modules.order
+[root@localhost build]# 
+
+修改Makefile
+=====================
+obj-m :=test.o
+
+KERNEL := /lib/modules/`uname -r`/build
+
+all:
+        make -C $(KERNEL) M=`pwd` modules
+
+clean:
+        make -C $(KERNEL) M=`pwd` clean
+=====================
+
+//查看模块信息
+[root@localhost module]# modinfo test.ko
+filename:       test.ko
+description:    module test
+version:        0.1
+author:         uplooking
+license:        GPL
+srcversion:     337CA1EE20BFC9C57626C0C
+depends:        
+vermagic:       2.6.32-358.el6.x86_64 SMP mod_unload modversions 
+
+/--/
+安装ctags
+[root@localhost module]# ctags -R
+[root@localhost module]# ls
+Makefile  modules.order  Module.symvers  tags  test.c  test.ko
+test.ko.unsigned  test.mod.c  test.mod.o  test.o
+[root@localhost module]# vim -t EBUSY
+/** 如果修改过.rc 需要先把.rc里的东西改了 */
+============
+set ts=4
+set ai
+set tag=绝对路径/tags
+============
+
+grep -rn ethhdr * //-r是递归 -n 行号 *所有文件或者写具体路径
+
+
+
+

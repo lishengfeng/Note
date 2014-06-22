@@ -1,0 +1,224 @@
+2013/11/23
+
+//将内核烧写到nand
+tftp 50008000 zImage_2nd
+nand erase 40000 400000
+nand write 500080000 40000 400000
+
+//nand写根目录
+ls /dev/mtdblock*
+
+将根文件 rootfs.tar拷贝到 nfsroot/（这里是uplooking/）下某个目录里，让开发板能看到
+
+将/dev/mtdblock3 mount 到 /mnt  （/dev/mtdblock3为nand分区，在启动时会自动加载这些nand分区所以bootargs能识别到）
+
+在arm板 上 
+
+将rootf 解压 tar xvf rootfs.tar -C /mnt   (这时候根已经写到了/dev/mtdblock3)
+
+完了后sync保证同步
+
+//设置启动参数
+set bootargs "root=/dev/mtdblock3 console=ttySAC0,115200" 挂载根目录
+set bootcmd "nand read 50008000 40000 400000;bootm 50008000" 挂载内核
+sav
+
+//arm和linux交叉编译工具  linux下编译的在arm下无法识别,需要用arm-linux-gcc来编译 可以通过 file test查看文件的架构  Intel或者 ARM
+/*
+test: ELF 32-bit LSB executable, Intel 80386, version 1 (SYSV), for GNU/Linux 2.6.9, dynamically linked (uses shared libs), not stripped
+
+test: ELF 32-bit LSB executable, ARM, version 1 (SYSV), for GNU/Linux 2.6.14, dynamically linked (uses shared libs), not stripped
+*/
+
+//工具配置
+cd /home/sa/arm/smdk6410/src
+//一般opt放第三方软件
+tar xvf arm-linux-gcc.tar.bz2 -C /opt/
+路径 /opt/4.3.2/bin 下 有各种命令   (4.3.2为该桥的编译gcc版本，和本地gcc没有关系)
+//改变环境变量地址   都在末尾加
+/root/.bashrc  只有root能使用 （普通用户也有）
+/etc/bashrc	    每开一次终端会读取这个文件
+/etc/profile    系统启动时会启动一次，或者用source /etc/profile
+
+例如: vim /etc/bashrc 
+	末尾 export PATH=$PATH:/opt/4.3.2/bin
+	通过    . /etc/bashrc 重新读取  点 空格 /etc/bashrc
+
+//有了交叉编译工具才能边bootloader 和 内核
+[root@dba src]# tar xvf u-boot-1.1.6.tar.bz2 -C /opt/
+[root@dba u-boot-1.1.6_smdk6410]# vim Makefile 
+其中有一条 
+CROSS_COMPILE = /usr/local/arm/arm-none-linux-gnueabi/bin/arm-none-linux-gnueabi-
+改为 CROSS_COMPILE = arm-linux-             (需要注意的是 确定 －之后没有字符包括空格，保证光标只能到－这个位置)(x能删除光标所在的字符)
+// make后面的参数根据arm板子型号决定
+[root@dba u-boot-1.1.6_smdk6410]# make smdk6410_config
+
+[root@dba u-boot-1.1.6_smdk6410]# vim include/configs/smdk6410.h
+
+/* Boot configuration (define only one of next) */
+//#define CONFIG_BOOT_NOR
+//#define CONFIG_BOOT_NAND
+#define CONFIG_BOOT_MOVINAND
+//#define CONFIG_BOOT_ONENAND
+//#define CONFIG_BOOT_ONENAND_IROM
+
+改为
+//#define CONFIG_BOOT_NOR
+#define CONFIG_BOOT_NAND    （NAND启动）
+//#define CONFIG_BOOT_MOVINAND  （SD卡启动）
+//#define CONFIG_BOOT_ONENAND
+//#define CONFIG_BOOT_ONENAND_IROM
+
+（如果想要SD卡启动的BOOT 则打开对应的）
+
+#define CFG_PROMPT              "Ghost@up # "   /* Monitor Command Prompt       */
+中间部分即为默认的命令输入的prompt
+
+//-j4表示开4个进程编译, 可无
+[root@dba u-boot-1.1.6_smdk6410]# make -j4  
+
+[root@dba u-boot-1.1.6_smdk6410]# ./mknand          (如果配置头文件是SD卡 ./mkmovi)
+rm: 无法删除 “u-boot-nand.bin”: 没有那个文件或目录  （不是错误只是第一次没有这个文件）
+96+0 records in
+96+0 records out
+196608 bytes (197 kB) copied, 0.000753547 seconds, 261 MB/s
+
+[root@dba u-boot-1.1.6_smdk6410]# ls u-boot-nand.bin 
+u-boot-nand.bin
+
+[root@dba u-boot-1.1.6_smdk6410]# cp u-boot-nand.bin /tftpboot/
+在重复一遍引导
+－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－
+
+/*  清除所有配置，包括配置文件
+[root@dba u-boot-1.1.6_smdk6410]# make distclean
+*/
+将头文件的改为 SD卡启动
+/* Boot configuration (define only one of next) */
+//#define CONFIG_BOOT_NOR
+//#define CONFIG_BOOT_NAND
+#define CONFIG_BOOT_MOVINAND
+//#define CONFIG_BOOT_ONENAND
+//#define CONFIG_BOOT_ONENAND_IROM
+
+//-j4表示开4个进程编译, 可无
+[root@dba u-boot-1.1.6_smdk6410]# make -j4  
+
+[root@dba u-boot-1.1.6_smdk6410]# ./mkmovi
+
+之后和上面 boot nand 一样
+＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
+//sd卡操作
+fdisk -l 确定哪个是你的SD卡
+
+[root@dba u-boot-1.1.6_smdk6410]# ./write_sd /dev/[mySDDevice] u-boot-movi.bin  (不是写到文件系统，写到末尾的保留分区，所以在pc端看不到，如果是不是自己手动格式化的话，不会对自己的文件有影响)    /*注意这个/dev/[device]必须是设备而不是分区，一般是/dev/sdb 而不是分区/dev/sdb1
+
+sync
+arm开发板用sd卡启动就可以了
+
+＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
+内核 可以去下载，但是一般直接编译的无法直接在开发板上用
+[root@dba src]# tar xvf linux-2.6.28.tar.bz2 -C /opt/
+
+[root@dba linux-2.6.28_smdk6410]# pwd
+/opt/linux-2.6.28_smdk6410
+[root@dba linux-2.6.28_smdk6410]# vim Makefile 
+将其中的
+CROSS_COMPILE   := $(shell if [ -f .cross_compile ]; then \
+                                cat .cross_compile; \
+                                fi)
+
+改为
+CROSS_COMPILE   := arm-linux-
+(-之后也不能有任何字符包括空格)
+
+[root@dba linux-2.6.28_smdk6410]# cp smdk6410_config .config
+－－－－－－－－－－－－－－
+//有时候如果不存在smdk6410_config让拷贝
+1.[root@dba linux-2.6.28_smdk6410]# cd arch/arm/configs/
+//找个相似的改改
+//这都没有就只能自己写了。。。
+[root@dba linux-2.6.28_smdk6410]# make menuconfig
+(必须保证字体够小，让菜单能显式全，不然会有异常)
+
+－－－－－－－－－－－－－－
+[root@dba linux-2.6.28_smdk6410]# make
+/* 高版本make可能会报异常  显示规则和隐式规则不能写在一起  例如：
+/ %/: prepare scripts FORCE
+        $(cmd_crmodverdir)
+        $(Q)$(MAKE) KBUILD_MODULES=$(if $(CONFIG_MODULES),1) \
+        $(build)=$(build-dir)
+
+改为
+
+/: prepare scripts FORCE
+        $(cmd_crmodverdir)
+        $(Q)$(MAKE) KBUILD_MODULES=$(if $(CONFIG_MODULES),1) \
+        $(build)=$(build-dir)
+%/: prepare scripts FORCE
+        $(cmd_crmodverdir)
+        $(Q)$(MAKE) KBUILD_MODULES=$(if $(CONFIG_MODULES),1) \
+        $(build)=$(build-dir)
+( name 和 %name 分别表示显式和隐式)
+*/
+
+编译末尾有一句
+  Kernel: arch/arm/boot/zImage is ready
+表明了存放的位置
+
+第一阶段 产生 zImage
+	arch/arm/boot/zImage
+第二阶段 编译module 
+	在开发阶段开发板驱动可以写为模块，在嵌入式系统中最终要将模块编译到zImage内
+
+//因为图片显式很大的解决办法
+[root@dba linux-2.6.28_smdk6410]# make menuconfig
+/*在Ubuntu 下要先执行 sudo apt-get install lib32ncurses5-dev*/
+(必须保证字体够小，让菜单能显式全，不然会有异常)
+选择 （选择用空格或确定用回车）
+Device Drivers -> Graphics support -> Support for frame buffer devices
+-> Select LCD Type UT_LCD7A 800＊480
+改为 480＊272
+再编译
+
+------------------
+/opt/linux-2.6.28_smdk6410 的文件相关
+arch表示和框架相关  可以用于哪些系统
+crypto 加密相关
+Documentation 文档   如描述如何在arm启动内核
+driver包含了绝大部分设备驱动
+sound 包含了音频的驱动
+fs 文件系统
+include 内核用的头文件
+ipc 进程间通信
+kernel 内核核心算法
+lib 库
+mm 内核管理
+net 内核协议栈
+scripts 脚本
+security 安全
+usr 和用户态相关
+virt 支持虚拟话
+------------------
+
+＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
+制作根文件系统
+
+[root@dba src]# tar xvf busybox.tar.gz -C /opt/
+[root@dba busybox-1.13.3]# make menuconfig
+
+Busybox Settings -> Build Options -> 修改Cross Compiler prefix为
+arm-linux-  (也不能有任何字符)
+
+Busybox Settings -> Installation Options ->第三个必须有值否则默认加/即为pc机的根
+
+[root@dba busybox-1.13.3]# make
+[root@dba busybox-1.13.3]# make install
+cd _install
+ls
+
+
+
+
+
+

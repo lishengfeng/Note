@@ -1,0 +1,9 @@
+2013/10/19
+ 守护进程: 父进程fork子进程,父进程退出,子进程继续工作,守护进程可以用kill杀掉,但是要用syslog记录
+ man 2 flock 粗锁
+ man lockf 细锁
+ tty8 --- ctrl+alt+F8
+ man select ---- select,  pselect,  FD_CLR, FD_ISSET, FD_SET, FD_ZERO - synchronous I/O multiplexing 监听文件描述符
+ man poll 监听文件描述符
+ man epoll  监听文件描述符(most efficient)
+

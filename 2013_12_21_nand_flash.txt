@@ -1,0 +1,86 @@
+2013/12/21
+
+原理图 QT6410_coreboard.pdf 第7页
+[sa@dba store]$ ls
+K4X51163PC.pdf  K9F2G08U0A.pdf  K9F2G08U0C.pdf.pdf
+[sa@dba store]$ pwd
+/home/sa/arm/smdk6410/datasheet/store
+看  K9F2G08U0C.pdf.pdf 第7页
+我们的nand 为256M
+
+引脚:
+N.C 和内部无连接，用于焊接固定硬件
+CLE为高,WE为上升檐，则按照命令写到nand
+ALE为高,WE为上升檐，则按照地址写到nand
+当CLE和ALE都为低就是正常的数据
+
+CE芯片使能,高位无效，低位有效//无论读写逗点现变成低位,CE2(0R(NC))其实是没用的
+RE为下降檐后经过tREA时间后表示数据已准备好，可读
+WE为上升檐才能写
+WP 写保护
+R/B  低电频表示忙碌,高电频表示不忙碌
+VCC电源
+VSS地
+
+//program == write
+
+时序图 21页OA
+.阴影部分为任意状态
+I/O平行时是稳定状态
+
+nand存储单元 cell 单层 1bit
+列 (每个都是一个I/O)
+o
+o
+o
+o
+o
+o
+o
+o
+多个列就变成了页,一页 2k=2^11 数据区,所以有11列  /*行地址即为页的起始地址,还有64B冗余,一些属性,如坏块标记*/
+多页就变成了block ，一个block有64页 128k
+一般读写操作的最小单位是页
+擦写的最小单元为block
+
+0x40000 低11位是列地址,高位是行地址 8条I/O线，多余的线都发0
+11位 = 8+3 ，第二次 最低三位i/o发地址，高位i/o全发0
+
+3页 一些基本参数
+
+8页 命令集合
+
+11、12页 硬件时间要求
+
+18 命令或者地址锁存周期
+
+ QT6410_coreboard.pdf 3页 与6410连接
+
+S3C6410.pdf 245页 08(NFCON) NAND FLASH CONTROLLER
+
+6410有控制器，初始化得告诉它NAND需要的时间，因为不同的NAND需要不同的时间
+========================
+其中TACLS/TWRPH0/TWRPH1在S3C6410.pdf的247页有说明怎么计算
+例如参考K9~U0C.pdf 20页的时序图,和时间要求11页
+TACLS需要保证的时间为tCLS-tWP = 15-15 = 0;虽然是0，但是我们一个给他一个周期TACLS = 1;
+TWRPH0-> tWP = 15ns ,因为一个周期为1s/133MHz = 7.5ns,所以给他俩周期,twrph0 = 1;
+TWRPH1 -> tCLH = 5ns,只要一个周期，所以TWRPH1 = 0;
+========================
+
+247页 控制器所需要的时间.
+248页 NAND FLASH ACCESS 方法 1~4,  /*5为校验*/
+如果是DATA，控制器支持三种方式,  通过不同汇编指令区分
+257页 寄存器地址 (ECC相关的都不看) HCLK 133Mhz 1*10^9/133/10^6
+310页 GPOCON
+
+K9F~0C.pdf  /*18页CLE中tCLS不是tCL，图中有错*/
+tALS-twp/tCLS-twp 如果不一样取更大值  11页,时序参数
+单词中有n表示nagtive 低电位有效
+36页 RESET36页 RESET36页 RESET
+
+反汇编
+//找Disassembly of section .text: 表示代码段,找下一个Disassembly表示代码段结束
+//最面面的为地址，找到最大的地址，别覆盖某个段了
+
+s3c6410 1124页 33 REAL TIME CLOCK XT1rtc和XT0rtc取反叠加
+1106 pwm time 几秒来一个中断

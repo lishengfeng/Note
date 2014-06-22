@@ -1,0 +1,214 @@
+2013/03/15
+内核源码 copy 一份查看 一份编译 (如果出错可以对比)
+www.embsky.com
+/** 用于编译源码的部分 删除其他芯片的代码 将arm移走，删除其他芯片,
+在arm中，删除除了6410的mach 和 plat */ /* 而用于查看的部分和开发的不能删 */
+编译
+
+//字符设备
+
+内存管理 进程管理 文件系统 网络协议线 设备驱动
+
+linux内核
+ 设备分为3类 
+  1.字符设备 :lcd led sound ... (还能再分类)
+  2.块设备 ：硬盘 光盘 U盘
+  3.网络设备 :网卡
+
+ 字符设备核心头文件 
+ <linux>/include/linux/cdev.h
+ <linux>/include/linux/fs.h
+ <linux>/include/linux/kdev_t.h
+
+ 设备号 ls -l /dev/tty2  第一个字母 为char字符设备 (b为块设备)    4为主设备号 2为次设备号
+ crw------- 1 root root 4, 2 3月  15 10:05 /dev/tty2
+  主设备号:用来区分是哪一类设备
+  次设备号:在同一类中区分是哪个具体的设备
+
+ vim -t 函数名
+ 如果找的 不对 再在vim命令里 cstag + 函数名继续找
+
+ 1.申请设备号 register_chrdev_region 先有设备号,然后注册
+	          cat /proc/devices 记录哪些设备号被占用了
+ 	      alloc_chrdev_region 动态申请
+ 2.归还设备号 unregister_chrdev_region
+/** 编译的时候 内核和配置必须是一致的 */
+===============================================
+#include <linux/init.h>
+#include <linux/module.h>
+
+dev_t no; //设备号
+
+static __init cdev_test_init(void)
+{
+        int ret;
+        no = MKDEV(250,10);//将主设备号和次设备号合并的一个宏
+        ret = register_chrdev_region(no,2,"mycdev");//参数:设备号
+要注册的设备号个数(包括主次设备号) 设备名称
+        if(ret<0)
+                return ret;
+        return 0;
+}
+
+static __exit cdev_test_exit(void)
+{
+        unregister_chrdev_region(no,2);
+}
+
+MODULE_LICENSE("GPL");
+MODULE_AUTHOR("Ghost");
+MODULE_VERSION("2.0");
+MODULE_DESCRIPTION("Cdev for Class");
+===============================================
+Makefile
+===============================================
+LINUX_PATH := /uplooking/linux-2.6.28_smdk6410
+
+PREFIX := /nfsroot
+
+obj-m += cdev_test1.o cdev_test2.o
+
+all:
+        make -C $(LINUX_PATH) M=`pwd` modules
+clean:
+        make -C $(LINUX_PATH) M=`pwd` modules clean
+install:
+        make -C $(LINUX_PATH) M=`pwd` modules_install
+INSTALL_MOD_PATH=$(PREFIX)
+===============================================
+
+
+动态申请(推荐)
+===============================================
+#include <linux/init.h>
+#include <linux/module.h>
+#include <linux/fs.h>
+#include <linux/kdev_t.h>
+
+dev_t no;
+
+static __init int cdev_test_init(void)
+{
+        int ret;
+        //参数 要存放主设备号的地址  第一个次设备号 要申请的次设备号个数
+        //设备名
+        ret = alloc_chrdev_region(&no,2,3,"hello");
+        if(ret<0)
+                return ret;
+        printk("Major:%d Minor:%d\n",MAJOR(no),MINOR(no));
+        return 0;
+
+}
+
+static __exit void cdev_test_exit(void)
+{
+        unregister_chrdev_region(no,3);
+}
+
+module_init(cdev_test_init);
+module_exit(cdev_test_exit);
+
+MODULE_LICENSE("GPL");
+===============================================
+ 
+open read write close ...----> /dev/led
+syscall ---> swi/svc --->0xffff0008--->sys_no--->sys_read/sys_write--->
+cdev--->ops---> write/read...
+
+ 主设备号和次设备号
+
+
+kzalloc 申请并清零内存
+  GFP_KERNEL 允许睡眠
+  GFP_ATOMIC 不允许睡眠
+
+mopen
+查看inode 找到union struct cdev
+
+struct cdev dev;//内核提供给用户态的接口(可以去内核中看看)//vim -t cdev /**
+Esc 两下退出更多，然后选择 查看结构体 */
+
+
+ENOMEM 内存错误
+EFAULT 指针错误
+
+跳错  vim ---> 命令:cope /** set mouse=a 使鼠标能拖动分栏 */ -->make --->
+点error 回车就自动跳到错误行代码 
+ubuntu 软件中心  终端 红色
+
+sys userdata --> android下 root/  然后挂载 
+
+物理驱动  一个驱动包含四个文件 1.驱动 2.头文件 3.设备 4. Makefile
+
+内核已经启动 mmu已经启动 只能操作虚拟地址
+void __iomem *v
+修改mmu页表来指定物理内存和虚拟内存的映射,以4k为单位
+SIZE_4K 
+
+iounmap 释放页表
+ioread32 内核提供的读外设
+iowrite32内核提供的写外设
+
+mknod led c 251 0  根据设备号来匹配才能找到
+	要创建一个节点  /** 真正节点应该在/dev/
+	节点--->VFS--->ops ---> 内核ops
+./led_app
+
+补充: vim配置
+
+ ubuntu12.04中使用的vim的版本不支持像语法高亮和文件类型检测等配置
+
+#sudo apt-get install vim
+
+vim默认的配置使用起来还不能让人满意，还需要自己配置
+默认配置文件是：/etc/vim/vimrc
+我们可以在家目录下建立自己的配置文件
+切换到家目录 #cd ~
+touch一个名为.vimrc的文件（以.开头的为隐藏文件）
+#vi .vimrc
+输入以下配置：
+set nocompatible       不使用vi默认键盘布局   
+set number               显示行号
+set autoindent          自动对齐
+set smartindent         智能对齐
+set showmatch          括号匹配模式
+set ruler                　显示状态行
+set incsearch            查询时非常方便，如要查找book单词，当输入到/b时，会自动找到   第一个b开头的单词，当输入到/bo时，会自动找到第一个bo开头的单词，依次类推，进行查找时，使用此设置会快速找到答案，当你找要匹配的单词时，别忘记回车.
+set tabstop=4           tab键为4个空格
+set shiftwidth=4    　换行时行间交错使用4个空格
+set softtabstop=4　 设置（软）制表符宽度为4
+set cindent              C语言格式对齐
+set nobackup            不要备份文件
+set clipboard+=unnamed   与windows共享剪贴板
+
+在vim 中实现括号自动补全 末尾添加
+
+:inoremap ( ()<ESC>i
+:inoremap ) <c-r>=ClosePair(')')<CR>
+:inoremap { {}<ESC>i
+:inoremap } <c-r>=ClosePair('}')<CR>
+:inoremap [ []<ESC>i
+:inoremap ] <c-r>=ClosePair(']')<CR>
+:inoremap < <><ESC>i
+:inoremap > <c-r>=ClosePair('>')<CR>
+
+function ClosePair(char)
+if getline('.')[col('.') - 1] == a:char
+return "/<Right>"
+else
+return a:char
+endif
+endf
+
+vim tab 跳过右括号
+
+inoremap <Tab> <C-R>=TabSkip()<CR>
+
+function TabSkip()
+    let char = getline('.')[col('.') - 1]
+    if char == '}' || char == ')' || char == ']' || char == ';'
+        return "\<Right>"
+    else
+        return "\<Tab>"
+    endif
+endf

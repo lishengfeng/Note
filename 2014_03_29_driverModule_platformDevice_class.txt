@@ -1,0 +1,134 @@
+2014/03/29
+
+设备模型  //用于管理设备， 支持热插拔
+kernel
+ bus_type 表示总线,内核管理总线的类型---->device设备链表----->
+ bus_type ---->driver驱动链表------->
+ bus_type提供方法匹配驱动和设备
+//一个驱动能对应多个设备，一个设备只能匹配一个驱动.
+ 假设想操作pci总线,自定义pci_bus继承自bus_type
+ 假设echi_device 设备继承device
+ USBh-hub 继承device
+ 
+CPU-->PCI-E-->ECHI--->USBh-hub--->U盘
+
+插u盘,来中断一级一级到CPU--> bus_type 分配设备
+---->通过某个关键值(id<可以一对多>或者名称<1对1>), 寻找匹配的驱动device
+
+bus_type一般不用自己写
+include/linux/device   和设备相关的头文件都在这
+/==================================================================
+vim -t bus_type  // struct
+
+ls /sys/bus 各种总线
+
+struce bus_type中
+name 就是在内核中表示的总线名字 如/sys/bus下的文件名
+struct device_attribute *dev_attrs; 设备的链表
+struct driver_attribute *drv_attrs; 驱动的链表
+
+match 返回1表示找到并会自动调用 probe()----> 再调用driver中的probe()
+match规则需要查看源码
+
+将总线标号共享 EXPORT_SYMBOL(struct mybus *) 看代码
+bus_register(struce bus_type *)注册总线
+bus_unregister(struct bus_type *)
+
+ls /sys/bus查看安装的总线 下面有device 和driver文件夹
+//===========================================================
+vim -t device 
+cstag device 看标识是s  struct device 头文件366行
+struct device_driver *driver 设备对应的驱动
+void            *platform_data; 匹配后存放设备参数
+void    (*release)(struct device *dev); 设备移除后收尾工作
+device_register
+device_unregister(struct device *)
+///==========================================================
+vim -t device_driver 看结构提
+只有挂在同一个总线上的设备能够匹配
+
+int (*probe) (struct device *dev);//匹配device和driver成功后调用,把和该驱动匹配成功的设备传进来
+int (*remove) (struct device *dev);//设备或者驱动注销的时候调用
+void (*shutdown) (struct device *dev);//关机的时候调用
+int (*suspend) (struct device *dev, pm_message_t state);//睡眠的时候调用
+int (*resume) (struct device *dev);//从睡眠中恢复的时候调用
+
+以上函数返回0表示正确 返回负数表示失败
+其中probe 和remove 是必须实现的
+
+driver_register(struct device_driver *)
+driver_unregister
+
+//插入设备会匹配驱动,插入驱动会匹配设备
+----------------------------------------------------
+匹配成功后 再申请设备
+ldev->flag 亮灯的个数
+
+IIC----> eeprom(i2c_client)
+USB---->U盘
+SOC[DisplayC AC97C NANDC WDT PWM...] 三总线
+
+platform_bus 虚拟总线 虚拟SOC
+
+实际的实体总线必须用内核提供的结构体 如eeprom必须用i2c_client 
+//
+头文件 include/linux/platform_device.h
+platform_bus
+platform_device
+platform_driver
+
+resource 放跟硬件相关东西，放硬件寄存器地址,中断线   这样有利于移植
+
+resource
+ .flags = IORESOURCE_MEM,//内存写这个 如果是中断线 则是 IORESOURCE_IRQ
+platform_device dev 
+ .id=-1 表示id让内核自己去算 //旧版本内核可能没有id
+
+如果设备无效，先查看设备参数对不对,如果都对再调试驱动
+
+尽量保证驱动在移植是不需要改动，而只要改动头文件和设备就行
+所以资源获得通过platform_get_resource(platform_device,IORESOURCE_MEM/.flag的值,0/位置)取得
+
+如果resource 写的太少，可以通过dev的 platform_data 来传递 //platform_data
+因为类型自定义所以这部分不可移植,不同情况不同处理
+
+//=============================================================
+触摸屏->IIC控制器-> IIC核心 ->
+驱动(我们实现，而触摸屏的数据,则通过IIC核心提供的接口获得)
+
+字符设备分类 LCD->framebuffer  sound input IIC PCI misc(杂项,如led)
+cdev为基类尽量不用，任何字符设备要不然在具体分类中,要么就肯定可以在misc中实现
+
+分类中的设备,提供了具体的注册方式,将操作告诉守护进程udev/mdev,该进程会在对应的位置自动创建节点 /dev/名称/dev_t
+udev是动态交互
+mdev只运行一次,每次需要手动执行,
+可以通过热插拔事件hotplug(因为注册和删除设备都会触发热插拔事件)
+模拟udev的动态交互
+
+//给内核添加一个新的字符分类
+头文件 include/linux/device.h
+struct class *
+
+/sys/class 查看当前存在的类
+
+class_create(owner,name) owner--> 可以是THIS_MODULE
+class_destroy;
+PTR_RET函数判断 如果是错误码转的指针则返回非0，不是则为0
+//需要头文件include/linux/err.h
+
+在/sys/class 下会多出一个类
+//给分类中添加一个设备
+device_create //里面的设备号以后要通过字符设备的alloc来取得防止设备号冲突
+device_destroy
+
+//我们的文件系统应该有
+======================
+cat /proc/sys/kernel/hotplug 需要有mdev才会自动执行，才能创建节点 通过echo
+'/sbin/mdev' > /proc/sys/kernel/hotplug
+/** 和文件系统有关 */
+======================
+mdev -s 手动执行 //自动执行不许要加 -s 
+
+cat /dev/xxx 就会出现添加的节点
+================================================
+将自动创建节点的代码，添加到之前的代码中.

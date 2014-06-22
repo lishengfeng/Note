@@ -1,0 +1,76 @@
+2014/03/30
+
+misc类
+miscdevice
+include/linux/miscdevice.h
+
+内核中在一个进程中，别定义太大的结构体，如arr[8192] 8k 内核就死了
+=========================
+//内存
+从下往上,
+kmalloc 连续的 vmalloc 虚拟连续，物理地址不一定连续
+slab 申请内存 作成 cache 高速缓存
+buddy 伙伴系统 alloc_pages __get_free_pages //必须是2^n *page
+mmu-->page_table
+==========================
+
+所有misc的主设备号都是10,不用设置
+次设备好用宏 MISC_DYNAMIC_MINOR
+
+misc_register()
+misc_deregister()
+
+因为不是字符设备了，所以inode->i_cdev 就找不到了
+open(misc)-->sys_open-->拷贝inode--> 判断为设备文件
+file中就会有 file_operations *f_op
+将f_op 指针放入结构体就能找到结构体的首地址
+
+外围设备一般放在内核这个位置
+arch/arm/mach-s3c64xx/mach-smdk6410.c  BSP 板级支持包
+
+smdk6410_machine_init-->
+platform_add_devices-->
+
+//将设备所有结构体 放到 mach-smdk6410.c 
+并include<misc/s3c....h>
+
+__initdata中添加 设备结构体led_platform_device的指针
+
+复制led_drv.c到drivers/myled/ 
+该路径Makefile 
+上层Makefile 末尾添加 obj-y += myled/
+编写Kconfig
+将自定义的头文件 放到内核include/misc/
+
+
+//input
+事件层，核心层
+手点触摸屏-->事件-->报告handler---/dev/event0
+核心层-->维护
+
+事件层必须选上才能将事件往上报.. make menuconfig
+device driver->input device support--> event interface
+
+vim -t input_event 事件结构体
+include/linux/input.h
+
+struct input_event{
+	struct timeval time //上报时间
+	__u16 type; //鼠标相对事件(根据上次坐标),绝对事件(点击坐标),同步事件
+	__u16 code; //事件码  x,y
+	__s32 value; //值
+}
+
+用户态下标准头文件路径/usr/include/linux/xx.h (可能是部分，不确定)
+
+EV_SYN 同步 //刷新
+EV_KEY 键盘事件
+EV_REL 相对事件
+EV_ABS 绝对事件
+
+对于键盘code 指那个按钮 value 为!0代表按下 
+
+查看当前系统下的输入设备 cat/proc/bus/input/devices
+
+./a.out /dev/input/event11 或者/dev/event11
+

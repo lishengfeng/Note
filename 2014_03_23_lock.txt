@@ -1,0 +1,185 @@
+2014/03/23
+
+//锁
+让设备变成线程安全
+抢占  /** Android 机制为可抢断 */
+如果单核且不让抢占，而内核死循环,就无法在处理其他事件了
+可抢占的内核,调度器可以在死循环打断 
+/** 如果模块是用不可抢占的内核编译的,而内核是可抢占的,则无法插入模块 */
+make menuconfig -->Kernel Features---> Preemption Model
+第三个为可抢断,android 默认就是这个
+Preemptionable kernel
+
+a++ //伪码
+ldr r0,&a
+add r0,#1
+str r0,&a
+只有在执行指令是无法被打断的, 这里就有两个间隙
+
+内核同步
+ ldrex r0,addr -->标记
+ 总线(标志)
+ strex r1,r0,addr -->清除标记
+ r1为返回值,0为成功,1为失败
+//如果用原子操作，所有的操作都得用原子操作
+//原理是因为如果被打断，则标记会打断的指令被擦除，在被打断的指令strex执行时发现标记没了,则知道自己被打断了
+
+所有内核无法打断都是用这两指令
+
+//在内核支持抢占才有意义
+//暂时将允许抢断disable,变成不可抢断
+头文件  include/linux/preempt.h
+preempt_disable();
+mdelay(3000);
+preempt_enable();
+
+//原子变量操作
+头文件
+arch/arm/include/asm/atomic.h
+
+typedef struct{
+	int counter:
+} atomic_t;
+vim -t atomic_t
+
+atomic_read(v)
+atomic_set(v,i) v指针,i值
+atomic_inc(&a) ---> a++
+atomic_dec(&a) ---> a--
+atomic_add
+1:      xxxx
+	xxxx
+	"teq %1,#0\n"
+	"bne 1b"  //如果上条指令 %1==0 则 条到标记 1 , b是指before,
+//也可以是a after 可以有两个一样的标记
+其实原子变量加法也能打断，只是能重复再算,保证结果是正确的
+
+arm 实在v6之后(包括V6)才有多核,我们的arm11是v6架构的
+
+//原子位操作
+arch/arm/include/asm/bitops.h
+
+set_bit(nr,p) nr指第几位,p指针 *p|=1<<nr /**nr可以大于32，会自己做处理 */
+clear_bit(nr,p)                *p&~(1<<nr)
+change_bit(nr,p)	       *p^1<<nr
+test_and_set_bit(nr,p)         返回值为 该位修改前的值
+test_and_clear_bit(nr,p)
+test_and_change_bit(nr,p)
+
+//自旋锁  /** 只在多核CPU,自旋锁才有作用,如果是单核不能抢占，则是一个空函数*/ 
+/** 自旋锁指死等,不是睡眠,是占着cpu不放 */
+共享资源
+临界区:要访问共享资源的代码 //必须加锁
+特点:死等、不睡眠
+好处:能在中断上下文使用
+死锁:自死锁(自己在等待自己的锁)，ABBA死锁(lock1等待lock2,lock2等待lock1)
+    不能带着锁睡眠 (因为等待锁的线程会占用cpu，所以就唤醒不了睡眠)
+
+头文件 include/linux/spinlock.h
+
+spinlock_t
+初始化 spin_lock_init
+加锁
+spin_lock //不获得锁就死等
+spin_trylock //尝试获得锁,能获得则等于lock,并返回1，不能获得则返回0，不会死等
+spin_lock_bh //禁止下半部分,因为锁是不能防止中断的
+spin_lock_irq //加锁,禁止中断
+spin_lock_irq //加锁，保存中断，再禁止中断
+
+解锁
+spin_unlock //解锁
+spin_unlock_bh //解锁，打开下半部分
+spin_unlock_irq //解锁，并打开中断
+spin_unlock_irqrestore //解锁，恢复中断
+
+make -f Makefile_X86
+
+//读写自旋锁 属于自旋锁，拥有自旋锁的特点
+头文件 
+特点:读锁可以被多次获取加锁，写锁只能加锁一次,并且读锁和写锁不能同时加锁.
+     如果获得锁不成功则死等.
+头文件
+3.x include/linux/rwlock.h
+2.x include/linux/spinlock.h
+
+rwlock_t
+rwlock_init
+
+read_trylock
+read_lock
+read_lock_irqsave
+read_lock_bh
+
+write_trylock
+wite_lock
+write_lock_irqsave
+write_lock_bh
+
+read_unlock
+read_unlock_irq
+read_unlock_irqrestore
+
+write_unlock
+write_unlock_irq
+write_unlock_irqrestore
+
+//信号量 //虽然有自旋锁对象,是用于保护队列,不用操作 //也不是基于自旋锁
+互斥信号量 1
+计数信号量 >1
+特点:睡眠的方式等待,不能用在中断上下文
+死锁:1.获得信号量后不能睡眠(可以睡眠ssleep,不推荐).2.不能多次获得同一个互斥信号量.3.ABBA相互睡眠等待
+
+谁先睡谁先醒
+
+头文件 include/linux/semaphore.h
+
+struct semaphore
+sema_init
+down(struct semaphore *sem) /** 任何信号打不断,包括ctrl+c */ //获得信号量
+down_interruptible /** 能够被任何信号打断 */
+down_killable /** 能被致命信号给打断,如: ctrl+c ctrl+/  */
+down_timeout /** 计时唤醒 */
+down_trylock 
+
+up 释放信号量
+
+代码 ps 查看
+
+extern int __must_check down_interruptible()
+其中 __must_check 表示必须检查
+
+//读写信号量
+本质也是信号量
+以读的方式可以同时获得多次,写的方式只能一次,读写不能同时存在.
+头文件 /include/linux/rwsem.h
+
+struct rw_semaphone
+init_rwsem
+
+down_read
+down_read_trylock
+down_write
+down_write_trylock
+
+up_read
+up_write
+
+//完成量
+//有依赖关系,一开是就先睡眠等待并判断，如果完成了依赖，则执行
+//谁先睡眠谁先醒来 
+/include/linux/completion.h
+
+struct completion
+
+init_completion
+wait_for_completion_interruptible
+wait_for_completion_killable
+wait_for_completion_timeout
+wait_for_completion_interruptible_timeout
+try_wait_for_completion
+
+completion_done 判断有没有完成过，有则返回1
+complete(struct completion *);完成一次
+complete_all(struct completion *);完成全部
+
+

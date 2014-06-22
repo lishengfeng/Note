@@ -1,0 +1,44 @@
+2013/12/01
+	
+操作内存指令
+	ldr 从地址取值到寄存器 ldr r0,hello\n //r0=*hello
+			
+			或者从[r0]寄存器取值 ldr %0,[r0]\n  //%0=*r0
+	str 将寄存器的值存到内存地址
+	__asm__ __volatile__(
+		"ldr r0,%1\n" //r0=*%1
+		"mov %0,r0\n"
+		"str r0,%2\n"
+		:"=&r"(out)
+		:"m"(x),"m"(y)
+		:"memory"
+	);
+	
+	进程: 代码段 数据段 (初始化为非0全局变量)  bss(为初始化或者初始化为0的全局变量) 堆(malloc)  栈(局部变量)
+
+	int a = 10; 等价于 .word 10,20,30   每个地址固定相差4,  可无限多个
+	short b = 10; 等价于 .short 10
+	char c = 10; 等价于 .byte 10
+	char *s = "nihao" 等价于 .ascii "nihao";
+	一般不用到浮点	
+
+	标号不占内存，addr是自己定义的,  谁离标号后边近，标号就保存它的地址
+	__asm__ __volatile__(
+		"addr:\n" //addr---> 10
+		".word 10,20,30,40\n"
+		"ldr %0,addr\n"
+		:"=%r"(out)
+		:
+		:"memory"
+	);
+
+	伪指令  即arm CPU不支持，但是编译器支持，会把伪指令替换成arm CPU支持的多条指令
+	"addr:\n"
+	".world 10,20,30\n"
+	"ldr r0,=addr\n"  //r0&addr
+	"ldr %0,[r0]\n"
+	"ldr %1,[r0,#4]\n"//%1=*(r0+4)
+--------------
+	"ldr %1,[r0,#4]!\n //回写  r0+=4 , %1=*r0
+
+	"ldr %0,[r0],#4\n //也会回写 %0=*r0 r0+=4

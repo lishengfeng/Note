@@ -1,0 +1,97 @@
+2013/12/15
+ ARM  Architecture Reference Manual 54页 工作模式
+ 两个中断控制器 VIC0 VIC1
+ 将处理函数的地址放到向量表里
+ S3C6410中断号
+ 最前面是中断号
+ VIC1[32,63]的IntEnable对应[0,31]
+ ISR interrupt service routine 中断处理程序
+
+ VICxVECTADDR0 其他的用偏移去找  32位上 指针 int long 都是四个字节
+ 64bit int< long==void*
+ arm-linux-objdump -D arm > txt 反汇编
+ 导入头文件 用 ctrl+p 提示自动补全
+ /*1.irq默认是关闭的，需要通过cps打开,cpsie i    2. 异常向量表的0x00000014是被保留的，所以irq需要在第7条指令，需要注意 */
+ 1136 watchdog timer
+	六个按钮
+ 359 外部中断寄存器
+	没写组的默认就是Group[0]
+000 = Low level 低位
+001 = High level 高位
+01x = Falling edge triggered 下降沿
+10x = Rising edge triggered 上升沿
+11x = Both edge triggered 上升和下降都是
+按键的五种情况
+	366 mask 中断屏蔽
+	
+ //滤波器，去除抖动
+	367GPIO 发生中断后去读取来确定是哪个按钮
+//按钮补充 S3C6410.pdf
+	1.首先找到按钮是GPN，339页，GPNCON需要设置为10即Ext.Interrupt 因为后面没有显式说明Group所以默认是Group1，六个按钮分别对于0~5Ext.Interrupt
+	2.查找外部中断控制器，告知cpu的处理函数地址 409页，External interrupt为Int.No. 0和1控制 0~3为0,4~11为1控制
+	3.查找外部中断控制器寄存器 361页 EINT0CON0和EINT0CON1为外部中断器配置寄存器，设置触发中断异常的时机 
+	4.将外部中断屏蔽给取消，336页 
+	5.通过EINT0PEND 的值来判断是那个外部中断 367页
+arm1176jzfs.pdf 227页
+	协处理器 [24]  VE bit 置为1时 向量表就不是默认的了 异常向量表－>向量中断表
+vim start.S 追加
+---------------------------
+        mrc     p15,0,r0,c1,c0,0
+        orr     r0,#(1 << 24)
+        mcr     p15,0,r0,c1,c0,0
+---------------------------
+	//将c1 24位的VE置为1
+	改成自定义向量中断
+
+1. start.S
+	协处理器 24位改为1 开启向量中断
+	将默认的去掉
+2.处理函数中 将VIC0ADDRESS 和 VIC1ADDRESS ＝0
+
+ 在函数前面加 void __attribute__((interrupt("IRQ")))sorf_isr(void) 告诉编译器按照interrupt编译，而不是普通的c编译
+	或者声明时写成void soft_isr(void)__attribute__((interrupt("IRQ")));
+
+链接脚本
+	控制链接 给链接器用
+	控制输出的格式
+	控制输出架构
+	指定程序的入口标号 如果没有链接脚本 要执行ld的默认链接器
+
+	合成一个段的方式 链接顺序
+	段的排布
+	默认的链接ld 会自己在段与段之间填充，生成的文件比较大
+	自定义的链接脚本 可以减小可执行内部段之间的间隙
+	
+	程序的起始地址 就是链接的起始地址
+
+	xxx.lds
+	ld a.o b.o -o a.out -T xxx.lds
+
+vim ld.lds
+==============================================
+OUTPUT_FORMAT("elf32-littlearm");
+OUTPUT_ARCH("arm");
+ENTRY("_start");
+SECTIONS
+{
+	. =0;  //.后必须有空格
+	.text : {                   //可执行的代码段
+		start.o(.text);
+		clock.o(.text);
+		*.o(.text);
+	}
+	. = ALIGN(4); //对齐
+	.data : {*.o(.data);} //全局和static变量 初值为非0的都在这个段
+	. = ALIGN(4);
+	.rodata :{*.o(.rodata);} //只读段 如char *str="abcd" 但是常量有可能放在代码段
+	. = ALIGN(4);
+	.bss :{*.o(.bss);} //全局变量或者static变量 没初值 和初值为0的  bss在运行时才生存，链接只是放了地址，而data和rodata则在运行前就在代码段了 
+}
+==============================================
+vim Makefile
+==============================================
+-T text 0 -T ld.lds
+=====================
+如果两个地址不一致，前一个优先级高
+
+！上个命令的某个部分，自动填充执行上次命令  如!arm

@@ -1,0 +1,5 @@
+2013/11/03
+ strace ./server
+ 
+ UDP 编程
+ vim /usr/include/stdint.h
