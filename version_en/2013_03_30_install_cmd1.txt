@@ -1,54 +1,43 @@
 2013_03_30
-安装小红帽企业版5
-	1.根 / 文件格式 ext3 
-	2. 文件格式 swap 大小 一般为：1.5*内存大小
-	3.应用策略： Desktop:GNOME
-		   Develop -> 全部
-		   Server -> Ftp /WebServer /Network Server/ WindowsFiler Server
-		   Language -> Chinese support
-	4.防火墙/SELinux/Kdupmp/Software updates 关闭 
-	
-命令：
-	mii-tool (root权限) 查看网络连接情况
-	ping (ip) 
-	ssh root@192.168.2.254   链接ip为192.168.2.254的root用户机器 (需要知道用户密码) /* xshell/putty 远程控制软件 */
-	cd 目录名 进入目录
-	ls 无/目录名  显示目录信息
-	tree 无/目录名   显示目录结构
-	*Ctrl + c 退出当前命令并新建命令
-	gedit 文字编辑
-	cd - 回到上次目录
-	cd .. 回上级目录
-	cd ../../ 回俩级 (依此类推，还可先退后进)
-	pwd 目录名  显示当前目录层级
-	su - (用户名) 切换身份 需要用户密码 exit退出
-	cd ~用户名 进入该用户主目录 需要权限 exit退出
-	mkdir 目录名 创建目录
-	mkdir -p 目录/目录/目录 创建目录层级 依此类推
-	w 查看连接本机机器
-	rm 文件 删除文件
-	rm -r 目录/文件 按照递归删除目录 (-f无删除交互,-i删除交互)
-	mv 原目录名 目标目录名  改目录名
-	mv 目录名  已存在目录名 移动目录
-	*Tab 自动补齐
-	*Ctrl + l 清屏
-	*ctrl + w 退至上一个空格
-	 passwd 用户名 修改用户密码 (需要权限，root可忽略安全密码提示，俩次输入密码相同即可)
-	/*普通权限*/ passwd 修改当前用户密码 (强制符合安全条件密码)
-	命令 --help/-h 显示当前命令帮助信息
-	man 命令 显示命令的文本信息 q退出
-	man 7 man 查看数字作用  (键盘下翻有)
-	man -f 命令 查看该命令含有的(数字)文本目录
-	man 数字 命令 查看该数字类型的命令文本信息
-	scp -r blues@192.168.1.254:/home/blues/Bridging/ .  
-		scp 拷贝 
-		-r  指示拷贝目录
-		blues 用户名
-		192.168.1.254 用户ip
-		/home/blues/Bridging/ 拷贝文件地址
-		. 本机根目录 
-		之后需要输入被拷贝用户密码 如：123456
-	
-	 
-	
-	
+Install Red Hat Enterprise Linux
+    1.root is /, format is ext3.
+    2.swap size is around 1.5*memory size.
+    3.application strategy:
+        Desktop:GNOME.
+        Develop -> all.
+        Server -> Ftp /WebServer /Network Server/ WindowsFiler Server.
+        Language -> Chinese support.
+    4.firewall /SELinux/Kdupmp/Software updates disable.
+    
+Commands：
+    mii-tool (root privilege) a Unix command which allows users to query and modify Network Interface Controller(NIC) parameters.
+    ping <ip> send ICMP ECHO_REQUEST to network hosts.
+    ssh <user>@<ip_addr> OpenSSH SSH client(remote login program) *Some remote control softwares:xshell,putty.
+    cd - Change the shell working directory.
+    ls - list information about the FILEs.
+    tree - list content of directories in a tree-like format.
+    Ctrl + c - kill a process with signal SIGINT.
+    gedit - text editor for the GNOME Desktop.
+    cd - The single dash will be replaced by the value of OLDPWD which is the previous working directory.
+    cd .. tells your system to go up to the directory immediately above the one in which you are currently working. To go up two directories, use the cd ../.. command.
+    pwd print name of current/working directory.
+    su - change user ID or become superuser. when - is used, it must be specified before any username.
+    cd ~username Tilde(~) stands for $HOME. ~fred/foo stands for the subdirectory foo of the home directory of the user fred.
+    mkdir - make directory.
+    mkdir -p - no error if existing, make parent directories as needed.
+    w - show who is logged on and what they are doing.
+    rm - remove file or directories. -r stands for recursive - remove directories and their contents recursively. -f - never prompt. -i - prompt before every removal.
+    mv - move (rename) files.
+    Tab - Automatically complete the file, directory, or command you're typing.
+    Ctrl + l - clean the screen, This is similar to running the 'clear' command.
+    ctrl + w - Cut the word before the cursor, adding it to the clipboard.
+    passwd - change user password. The password is tested for complexity.
+    command --help/-h - show the help information of the command.
+    man [section] command - show command's manual. The man page for man itself(man man) explains section. ex. man 1 printf; man 3 printf. You can also use '-a' param to show all the section. Or use '-f' to print out the short descriptions of any found
+    scp — secure copy (remote file copy program)
+    Syntax:
+    scp <source> <destination>
+    To copy a file from B to A while logged into B:
+    scp /path/to/file username@a:/path/to/destination
+    To copy a file from B to A while logged into A:
+    scp username@b:/path/to/file /path/to/destination
