@@ -1,0 +1,71 @@
+2013/08/17
+
+UNIX一切皆文件
+LINUX 一切皆文本文件
+
+1.io
+2.sys
+3.ipo
+4.network
+
+su - root
+cat /etc/shadow
+
+apache:!!:15929:0:99999:7:::
+sa:$1$umIm.YuA$EQ7wb7lVQo3.jLCxWgwf81:15934:0:99999:7:::
+
+其中 15929为1970.1.1日(元年)到今天的时间 (时间戳)
+第二条为密码
+
+cat /etc/passwd
+存储用户信息
+
+BCPL   Basic computer program language1973   
+
+c <-> UNIX(一类操作系统)
+
+GNU GNU is not UNIX      
+
+uname -a   GUN/Linux 
+
+GPL  你所被授权的, 也必须要授权给别人
+BSD  随意
+
+进程：正在执行的程序
+程序：可以执行的文件
+
+cat !$ 上一条命令的最后一个参数 history中的一个命令
+history 历史命令
+w 查看当前tty
+
+echo > asa;sdkfj > /dev/pts/1
+
+/dev/    设备信息
+ps 可以查看进程pid
+/proc/   进程信息 文件名为pid  里面有个fs为文件描述符
+系统调用均在 man 2 *** 下
+vim中noh取消高亮
+
+echo $? 返回上个命令的成功与否,成功为0,失败为非零(1～255)(*128~255为预留给系统调用),失败具体值在代码中的exit(1)控制,其中1就会是失败时的退出码
+kill -l   其中ctrl+c 为 2)SIGINT  直接kill为 15)     如果是系统打断一般为 128+信号的编号  例如： ctrl+c -> echo $? 返回 130 即128+2
+kill 的信号0 实际无操作,通过不同返回值来确定是否存在某个进程
+wc 统计文件信息
+空洞文件 用lseek实现  并不实际占用空间   ls并不能显示实际分配大小,du可以
+
+1. IO
+    sysio 
+        fd 文件描述符（数组下标）        
+              0,1,2为默认打开描述符  
+                0 -> stdin.    重定向  <
+                1-> stdout.  >　默认定向
+                2-> stderr  所以错误重定向为  2>
+        man 2 open
+        man 2 close
+        man 2 read
+        man 2 write
+        man 2 lseek 
+             vim /usr/include/sys/types.h
+        man perror 打印系统错误信息
+    stdio 
+    advio    1).select 2).poll 3).epoll
+            

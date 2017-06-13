@@ -1,0 +1,102 @@
+2014/01/04
+ 网卡,原理图main.pdf 4页DM9000
+ CS片选线  CSn1
+ OEn WEn 读写
+ TX+- 发送信号 RX+-接受信号
+[sa@localhost network]$ pwd
+/home/sa/smdk6410/datasheet/network
+DM9000A Application Notes Ver 1_20_101906.pdf  编程手册
+DM9000AE.pdf 硬件手册
+DM9000AE.pdf 10页 
+CS# 芯片 #表示低电频有效
+CMD When high, the access of this command cycle is DATA port
+    When low, the access of this command cycle is INDEX port 
+其中INDEX 索引相当于地址
+
+INT - This pin is high active at default 高电频中断
+
+6410 -> DM9000  原理图上是ADDR2 所以对应6410 ADDR的第二位
+数据线DATA/地址线ADDR[2]-CMD/控制线IOR IOW
+ADDR[2]位决定CMD的模式,高为DATA，低为INDEX
+*(int *)0x0=0xF8;[2]为0 INDEX
+*(int *)0x4=0xFF;[2]为1 DATA
+
+116页 内存起始位置0x18000000+0x0/0x4 //因为原理图上是CSn1 所以对应的是Bank 1
+
+DM9000AE.pdf 60页
+PHYceiver 接网线 phy收发器 模拟
+MAC 数字部分
+
+ 10/100M PHY and 4K
+Dword SRAM
+The DM9000A supports 8-bit and 16-bit data
+
+我们是16-bit 所以是2个字节,所以Dword SRAM->double world 缓存为2*2*4k=16k
+10/100M是自动切换的，软件操作不了 
+6410 205页 SROM CONTROLLER -> CS
+将线宽 改为16bit 因为原理图DATA是[15:0]十六位
+
+收发缓存都是以16位操作,而寄存器是8位所以要有DATA8和DATA16 //regs.h
+/*
+以太网 包 头部 /目标/源/协议格式
+FTP/TFTP->UDP/TCP->IP/ARP/ICMP->以太网(MAC)  
+
+FTP基于两个TCP 一个数据传输，一个弱同步
+tftp 基于UDP
+NFS基于UDP,但可以改成ftp
+ARP会发个广播询问机器是否是使用某个IP如果符合就返回一个MAC进行通信,
+但是如果伪装直接回复个MAC，则ARP就无法和正常的机器通信了
+*/
+
+pc 
+#arp -s 192.168.1.20 00:11:22:33:44:55  //人为的将pc
+mac地址改，将要发送到192.168.1.20的包都发送到这个MAC上
+
+#arp -d 192.168.1.20 或者重启 删除绑定
+#arp -n或者arp -a 显示绑定
+
+6410 13页
+DM9000.pdf 21 How to Read/Write DM9000A Register
+//看安装抓包器没有
+rpm -aq|grep wireshark-gnome
+--------------------------------------------
+ubuntu12.04下安装wireshark  
+
+安装编译工具：
+
+　　$sudo apt-get install build-essential
+
+　　为了成功编译Wireshark，您需要安装GTK+的开发文件和GLib库(libraries)。
+
+　　$sudo apt-get install libgtk2.0-dev libglib2.0-dev
+
+　　安装Checkinstall以便管理您系统中直接由源代码编译安装的软件。
+
+　　$sudo apt-get install checkinstall
+
+　　安装wireshark。
+
+　　$sudo apt-get install wireshark
+
+运行wireshark:
+
+       $sudo wireshark
+
+       因为要读取网卡信息，所以需要管理员权限执行。
+       
+       从软件中心里面安装完wireshark 后通过下面命令打开
+sudo wireshark
+
+首次打开后, 可能会遇到下面的问题
+报错信息为：
+Lua: Error during loading:
+ [string "/usr/share/wireshark/init.lua"]:45:dofile has been disabled
+
+解决方案：
+编辑init.lua文件的倒数第二行：sudovim /etc/wireshark/init.lua ；改为--dofile("console.lua")
+重启wireshark即可。
+
+网上看到的不错的解决办法，记录在这里。
+
+打开后, 在过滤栏里面输入 ARP 可以看到所有ARP请求的数据包, 很多局域网里面的ARP病毒就可以通过这种办法查到
+--------------------------------------------

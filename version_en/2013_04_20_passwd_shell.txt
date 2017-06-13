@@ -1,0 +1,278 @@
+2013/04/20
+破解密码：1.停留在grup启动 e进入编辑,e再进入内核编辑, 在末尾加空格1,按b重启
+      ,进入了root用户下,且无口令验证,passwd重设密码,reboot重启
+
+    2.光盘F5, continue自动挂载光盘,clear清屏
+        df -h  查看挂载信息
+        cd /mnt/sysimage/      进入挂载后系统镜像
+        ls
+        cd /mnt/sysimage/etc/  
+        ls passwd          用户信息
+        ls shadow          密码信息
+        grep root passwd
+        grep root shadow      最前端的为口令
+        /mnt/sysimage/sbin/grub-md5-crypt --grub-shell=/mnt/sysimage/sbin/grub     生成口令
+        用生成口令替换掉    grep root /mnt/sysimage/etc/shadow中命令
+        reboot
+============================================================
+ubuntu 下
+在未知root密码的情况下修改root密码. 史上最简单实用的一种办法
+
+大致上分为两步:
+
+一, 进入可读写的root用户模式.  二, 修改root密码.
+
+开机按 F12 (或长按Shift), 进入GRUB界面.
+
+一, 选择 Advanced options for Ubuntu
+
+二, 可以看到两个模式,
+
+1, Ubuntu, Linux 3.5.0-17-generic
+
+2, Ubuntu, Linux 3.5.0-17-generic (恢复模式) (或recovery mode)
+
+在恢复模式处, 按e, 进入Ubuntu恢复模式的脚本编辑界面,
+
+找到以下语句: 开头是linux, 后面有  … ro recovery nomodeset
+
+将ro recovery nomodeset 改为 rw single init=/bin/bash
+
+注 :如不修改此处, 后面进入root后,但是不能修改文件.
+
+以上修改意为改为可读可写的单用户模式, 之后按Ctrl + x, 进入单用户模式, 此时的用户即位root用户.
+
+以上步骤是为了进入可读写的root用户模式.以下步骤为修改root密码.
+
+进入命令行后, 再输入新的root密码, 在命令行中执行​passwd root ​输入两次新的密码即可.​
+
+此时原来的root密码便永远随风而去了,只有上帝才知道它曾经存在过,而且困扰过我们,就像我们的年少时暗恋过的女孩一样.最后重启系统. BTW: 以上方法适合操作一个不知root密码以及任何用户密码的情况下使用,例如拿到一个ＰＣ, 不知道开机密码的情况下使用.如果已知一个用户的登录密码, 可以 sudo passwd root , 输入当前用户的密码即可修改root密码.
+============================================================
+
+shell   打包命令
+    1.返回值  
+        echo $? 判断上条命令
+            0 成功
+            1~255 失败
+        变量
+        环境变量  可继承
+            env 显示环境变量
+                如HOME=/home/sa  home的位置  cd ~或cd
+        普通变量    不可继承
+            set 显示环境变量和普通变量
+            例如  HH＝123456  生成一个普通变量
+                 export NN=123435678 生成一个环境变量,也可升级普通变量权限
+        echo $HH  显示变量值
+        echo $NN
+        pstree     按照树型结构显示变量使用进程
+            如:    在命令框中输入bash , 从pstree看出bash-bash..并在子线程中环境变量也能显示,被继承了.
+        set | grep PS   显示shell命令提示符的显示格式
+                ========================================
+            [sa@localhost ~]$ set | grep PS
+            GROUPS=()
+            PS1='[\u@\h \W]\$ '
+            PS2='> '
+            PS4='+ '
+        ========================================
+        man bash    /\u查找 \u
+        PS1='[\u@\h \t \W]\n\$       修改格式
+        echo $PATH
+            1.PATH = /usr/kerberos/bin:/usr/local/bin:/usr/bin:/bin:/usr/X11R6/bin:/home/sa/bin:/****/ 追加
+            2.PATH = $PATH:/home/blues/bin        追加
+        man bash
+
+        $?  返回上调命令返回值
+        $$  当前shell pid
+        $#  参数个数
+        $@  参数列表
+        $*      Expands  to  the positional parameters
+        $1  第一个参数, 依此类推
+
+        history 显示已敲命令
+        <========================================
+            vim args.sh
+            <================================
+                #!/bin/bash             执行位置
+                echo $#              
+                echo $@
+                echo $*
+                echo $1
+                echo $2
+                echo $3
+            ================================>     属于解释运行
+            chmod +x args.sh                  执行 +x 可以用./args.sh运行
+            ./args.sh
+            vim args.sh
+            ./args.sh
+            ./args.sh 11 22 33 44 55
+            <===============================
+                        [sa@localhost shell]$ ./args.sh 11 22 33 44 55
+            5
+            11 22 33 44 55
+            11 22 33 44 55
+            11
+            22
+            33
+
+            ================================>           
+            history
+        =========================================>
+        test 测试
+        man test
+        test -f /root/  判断是否为普通文件
+        test -e /root/  判断是否存在该文件或者目录
+            echo $? 
+        
+        INTEGER1 -eq INTEGER2
+                    INTEGER1 is equal to INTEGER2
+
+            INTEGER1 -ge INTEGER2
+                    INTEGER1 is greater than or equal to INTEGER2
+
+            INTEGER1 -gt INTEGER2
+                    INTEGER1 is greater than INTEGER2 
+
+
+            INTEGER1 -le INTEGER2
+                    INTEGER1 is less than or equal to INTEGER2
+
+            INTEGER1 -lt INTEGER2
+                    INTEGER1 is less than INTEGER2
+
+            INTEGER1 -ne INTEGER2
+                    INTEGER1 is not equal to INTEGER2
+
+        例如 test 100 -gt 500
+            echo $?
+
+        echo $[100+105]  +-*/%   整数
+
+        echo "scale=20;10/3" | bc   bc 浮点运算   bc是交互命令,所以用echo传入所需参数
+
+        echo $RANDOM[$RANDOM][$RANDOM]
+
+        vim ping.sh
+    dowhile
+        <=======================================
+        #!/bin/bash
+        NUM=1
+        while test $NUM -le 254
+        do
+        (
+            ping 192.168.1.$SUM -c1 -W1 &> /dev/null  黑洞设备(不影响磁盘大小)
+            if test $? -eq 0
+            then                  
+              echo 192.168.1.$NUM
+            fi
+        ) &
+            NUM = $[$NUM + 1]
+        done
+        ========================================>
+        从192.168.1.1 ping到192.168.1.254
+        <=======================================
+        for I in 1 2 3 4
+
+        for I in `seq 1 254`
+        do
+        done
+        ========================================>
+        seq -w 1 10 生成1到10十个数    -w 加占位符
+
+    for
+    3.echo ${MM:-adb} 将abc 赋给MM
+      echo ${a#1*3}  掐第一个3
+      echo ${a##1*3} 掐最后一个3
+      a = 11.c
+      echo ${a:3:1}  a的值取第四位,一个值
+        <======================================
+        #!/bin/bash
+        DIR="/home/sa/tmp/"
+        NUM=1
+        cd $DIR
+        
+        for I in `ls $DIR`
+        do
+            echo $I
+            STR=${I:0:1}
+            mv $I $STR$I
+        done
+        cd -
+        =======================================>
+    4.cat abc &   &将命令在后台运行
+        ctrl + z 暂停当前进程,并扔到后台
+        jobs 显示后台信息
+      fg %% 将最后一个进程调前  %1 调回特定id
+      bg %% 将最后一个进程后台变成running
+    5.data 显示时间
+        echo `data`   1左边按钮的符号 将data结果运行到echo上
+        echo $(data)    引用..比``实用
+
+    6.switch   
+        <=======================================
+        #!/bin/bash
+        ARGV=$1
+        case $ARGV in
+        -l)
+            ls -l
+            ;;
+        -h)
+            ls -h
+            ;;
+        *)
+            ls
+            ;;
+        esac
+        ========================================>
+        $1表示传入的第一个参数
+    7.      rsync  同步 但不覆盖 -av 所有信息显示 --update 只同步更新的 --delete删除也同步
+        <========================================
+        #!/bin/bash
+        USER="blue"
+        HOST="192.168.1.253"
+        SRCDIR="/home/blues/Bridging/"
+        DESTDIR="/root/Bridging/
+        BACKUPDIR="root/backupdir/"
+
+        mkdir -p $BACKUPDIR
+        DATE=`date+%F_%T`
+
+        rm -rpf /tmp/rsync.flag
+        (
+        tar zcf ${BACKUPDIR}Bridging$DATE.tar.gz $DESTDIR  &>/dev/null
+
+        
+        if [$? -eq 0]
+        then
+            if [-f ${BACKUPDIR}Bridging$DATE.tar.gz]
+                then
+                    echo "backup success"
+                    touch -p /tmp/rsync.flag
+                fi
+            else
+                echo "backup fail"
+                touch -p /tmp/rsync.flag
+                exit 1
+            fi
+        fi
+        ) &
+        while true
+        do
+            echo `data_%F_%T`
+                du -sh ${BACKUPDIR}Bridging$DATE.tar.gz
+            sleep 1
+                clear
+            if[-e /tmp/rsync.flag]
+                then
+                    break
+            fi
+        done
+        rsync -a --update --delete $USER@$HOST:$SRCDIR $DESTDIR
+        rm -rpf /tmp/rsync.flag
+        =========================================>
+        查看 shell 中 read 关于交互输入 
+        []等同于test
+        while true; do echo $i;i=$[$i+i];done
+
+        
+        
+

@@ -1,0 +1,114 @@
+2013/12/29
+透明度需要RGB888
+window 0无透明度
+S6410.pdf 501页
+window 1 [6] BLD_PIX 0平面混合(所有像素透明度一样),1像素混合
+
+475 页 混合
+BLD_PIX[6] value @WINCON1/2/3/4 
+平面混合时, VIDOSD1C 控制透明度寄存器
+vim lcd.c
+vim key.c
+vim main.c
+vim Makefile
+
+arm/LCD
+
+rpm -aq|grep jpeg 
+是否安装了 libjpeg-devel-6b-37 / libjpeg-6b-37
+rpm -ivh libjpeg-devel-6b-37.i386.rpm  i->install v->visable
+//Ubuntu下用apt-cache search libjpeg查找包,apt-get install libjpeg62-dev安装
+
+[sa@dba mkimage]$ pwd
+/home/sa/arm/LCD/mkimage
+rm *.bin -rf
+rm -rf *.jpg
+rm mkimage
+vim fb.h
+---------------
+#define BPP 24   //编译成RGB888用这个
+//#define BPP 16 //编译成RGB565用这个
+---------------
+make 
+./mkimage mm/1.jpg 1.bin
+./mkimage mm/2.jpg 2.bin
+//支持bitmap 和 jpeg
+//旋转可以通过软件
+cat 1.bin >> 2.bin //将1.bin追加到2.bin
+ll *.bin
+cp 2.bin /tftpboot/
+
+tftp 50008000 2.bin
+nand erase 0x40000 200000
+nand write 50008000 0x40000 200000
+nand write 50008000 40000 200000
+
+color key
+
+ALPHA_SEL[1] 必须是0 by AEN or chrome 
+WINCON1 BLD_PIX[6] 必须是1 像素混合
+OSD on screen display
+516页 W1KEYCON0
+[26] 不是全抠，可以透明
+[25] 使能
+[24] 显示前景还是背景
+[23:0] 掩码 与W1KEYCON1 COLVAL配合用.. 如0x00ffff  则置为1的部分全部忽略，都算匹配成功
+ 
+vim lcd.c
+vim key.c
+vim main.c //读一张图
+
+电容屏/ 电阻屏幕
+我们是电阻屏
+电容屏 MCU I^2C 只要读中断就知道坐标，比较容易
+ADC 模拟量转换成数字量
+DAC 数字两到模拟量的转换器
+6410支持10位和12位精度(一般用12位更精确)
+
+6410 1209页
+
+at a maximum conversion rate of
+1MSPS with 5MHz A/D converter clock. 
+最大转换速率
+
+1211 用PCLK 66M  时间源
+转换时间
+TOUCH SCREEN INTERFACE MODE
+1.Normal模式，只关电压
+2.XY
+1215页
+ADCCON 
+[16]转换进度
+[15]是否转换完成
+[14] 使能分频
+[13:6] 分频
+[5:3]模拟信号选择
+[2] 待命
+[1][0]读使能或者转换使能
+
+ADCTSC  工作模式
+主要控制AUTO_PST/ XY_SPT
+
+ADCDLY = 0xffff; //接通电源以后延时多久开始工作,一般写最大
+
+ADCCLRINT 写任意值清除中断
+
+vim regs.h // 注意ADCCLRINTPNDNUP 和ADCDAT0
+
+拧蓝色电阻看值 
+
+分别测量X，Y 方向
+1211 ADC channel selection bits are automatically changed to ’5’.
+5即为 1210页 AIN5(YP)用YP测x方向
+
+//得出最大值最小值后，和分辨率配合起来写算法
+
+自动测量X,Y方向
+
+//中断方式获得XY
+1212页，测量按下 ADCTSC 0xd3;
+[8]决定测量抬起还是暗笑，所以如果要测量抬起 ADCTSC =0x1D3;
+
+按下开启定时器，定时器启动转换,转换完打印后判断是否抬起
+
+

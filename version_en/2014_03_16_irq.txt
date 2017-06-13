@@ -1,0 +1,117 @@
+2014/03/16
+中断
+ s3c6410--->arm1176jzf-s--->VIC(向量中断控制器)
+ stm32----->arm-cortex-m3---NVIC(可嵌套中断控制器)
+ Exynos4412->arm-cortex-a9-->GIC(多核)
+
+ reset异常 --->svc 管理模式
+ irq ----> irq 中断--->0x18/0xffff0018/向量接口 /** 如果使用向量接口，就不好移植, 0x18在有些芯片中，该位置不让修改 */
+
+ 6410:64个中断源 VIC0=0-31 VIC=32-63
+
+ <linux>/include/linux/interrupt.h
+ /**3.4内核中位置是 <linux>/arch/arm/mach-s3c64xx/include/mach/irqs.h */
+ --
+ //2.6.28内核 中位置是
+ <linux>/arch/arm/plat-s3c64xx/include/plat/irqs.h /** 在interrupt.h 中已经被包含，不用单独包含 */ /** 用这个找中断线 */
+ --
+
+ 在内核中中断源 改叫 中断线=中断号+偏移  和裸板不同它可以挂若干个处理函数  /**不同处理器，偏移不一定一样 */
+
+ 板子
+ cat /proc/interrupt 可以看添加的中断和中断来的个数 
+
+ 申请中断
+ request_irq
+ 注销中断
+ free_irq
+
+ 禁止中断
+ local_irq_disable
+ 开启中断(默认)
+ local_irq_enable
+
+ //保存当下状态 再禁止
+ local_irq_save(unsigned long flags);
+ //恢复之前保存的状态
+ local_irq_restore(unsigned long flags); //和local_irq_save配套用，原子操作，而disable和enable则不是原子，可以被打断 */
+
+ 因为内核无法调度中断，所以内核不让中断睡眠
+ 内核中中断分为两部分 上半部分和下半部分 
+  上半部分写紧急的不可被打断操作(即中断上下文,也就是中断处理函数) /** 如果睡眠，内核会崩溃 */
+  而下半部分则是不紧急的可以被打断的
+
+ 进程上下文 如: irq_test_init 输入insmod 的进程上下文 可以通过函数<linux/sched.h>  printk("content:%lu\n",in_interrupt()); 判断是进程上下文还是
+ 中断上线文, 0为 进程 非零为中断
+ 
+//中断下半部分 三种 1.软中断 2.tasklet 3.工作队列
+ 1.软中断 <linux>/include/linux/interrupt.h
+    在中断处理函数结束的时候执行软中断，或者内核会定时的扫描软中断(如果有就执行)
+    在内核中用一个数组表示软中断，最多能有32个软中断(因为数组连续最长的是32)
+    头文件中的enum中的为内核已经使用了, 但是可以添加 必须在RCU_SOFTIRQ之前
+    1.1数组添加软中断, 让 pending挂起
+ [sa@localhost linux]$ pwd
+/uplooking/linux-2.6.28_smdk6410/include/linux
+[sa@localhost linux]$ vim interrupt.h 
+
+=========
+enum
+{
+        HI_SOFTIRQ=0,
+        TIMER_SOFTIRQ,
+        NET_TX_SOFTIRQ,
+        NET_RX_SOFTIRQ,
+        BLOCK_SOFTIRQ,
+        TASKLET_SOFTIRQ,
+        SCHED_SOFTIRQ,
+#ifdef CONFIG_HIGH_RES_TIMERS
+        HRTIMER_SOFTIRQ,
+#endif
+        MY_SOFTIRQ, /* Test */
+
+        RCU_SOFTIRQ,    /* Preferable RCU should always be the last softirq */
+
+        NR_SOFTIRQS
+};
+=========
+    vim kernel/softirq.h
+
+=========
+追加
+
+EXPORT_SYMBOL(raise_softirq);
+EXPORT_SYMBOL(open_softirq);
+否则 模块是无法使用这些函数的
+=========
+    open_softirq
+    __raise_softirq
+
+软中断仍然处于中断上下文,不能睡眠，但是可以被打断
+相同的软中端可以在不同的cpu上同时执行
+ 2.tasklet(小任务机制)</linux/liunux/interrupt.h
+    基于软中断(HI_SOFTIRQ和TASKLET_SOFTIRQ) 实现
+在enum枚举里的参数,也在中断上下文,可以被打断，不能睡眠
+   task_struct
+    要防止并发,不允许在不同cpu处理
+   DECLARE_TASKLET
+   task_init
+   __tasklet_schedule/__tasklet_hi_schedule------->被封装为了tasklet_schedule/tasklet_hi_schedule
+ 3.工作队列 
+   基于内核线程实现 处于进程上下文,能被打断，允许睡眠
+  工作者线程---------->工作队列
+
+  /include/linux/workqueue.h
+
+  work_func_t
+  普通工作和延迟工作
+  declare-->init->schedule-->
+ 自己创建工作队列 (内核不推荐)
+
+  create_workqueue
+  queue_work
+  queue_delayed_work
+
+//modprobe 模块 来添加   模块必须放在 /lib/modules/`uname -r`/extra/ 才行,
+//可以解决依赖关系，而insmod,则必须人为控制
+//make install 可以将 模块 放到 /lib/modules/`uname -r`/extra/ 下
+

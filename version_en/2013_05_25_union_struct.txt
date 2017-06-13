@@ -1,0 +1,16 @@
+02013/05/25
+
+(*p).struct.a <=> p-> struct.a
+
+struct {} x ((packed))；紧缩模式,每个数据间无任何填充
+
+union 和 struct 用法一样，意义不同
+
+struct 每个成员都是独立的
+union 修改其中一个成员其他成员也改变，用的是同一个地址  有点类似于多态，可以根据不同的情况用里面不同的类型的值
+union  /* sizeof(union foo) 长度大于等于union中最大的类型长度 */
+
+malloc(sizeof(int)*10) 函数 申请一个内存 以字节为单位
+ 位于stdlib.h
+
+

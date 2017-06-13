@@ -1,0 +1,142 @@
+2012/12/22
+ RAM  SRAM 静态,上电就能用
+      DRAM(DDR2) 电容，需要动态刷新,上电需要配置才能用
+        -> DRAM 原始
+       SDRAM 能跟上CPU节奏(需要相同时钟源) 
+         -> SDR SDRAM // Single data rate 
+            DDR SDRAM //double data rate 一个周期两次数据传输
+
+[sa@dba store]$ ls
+K4X51163PC.pdf  K9F2G08U0A.pdf  K9F2G08U0C.pdf.pdf
+[sa@dba store]$ pwd
+/home/sa/arm/smdk6410/datasheet/store
+
+K4X51163PC.pdf
+最小存储单元-电容,
+8个电容一个字节,多行多列形成bank,bank不能过大,所以多个bank(阵列)
+32M x16 Mobile-DDR SDRAM //类型 和 规模 32M*16条线 
+    因为原理图上说了有两片所以是32M*16*2字，而算容量以字节(8个字)为单位,所以大小为32M*16*2/8=128M
+FEATURES
+1.8V power supply, 1.8V I/O power
+• Double-data-rate architecture; two data transfers per clock cycle
+• Bidirectional data strobe(DQS)
+• Four banks operation
+• 1 /CS
+• 1 CKE
+• Differential clock inputs(CK and CK^)
+• MRS cycle with address key programs
+-CAS Latency ( 2, 3 ) //需要多少个周期缓冲,通过Operating Frequency决定
+- Burst Length ( 2, 4, 8, 16 ) //一次读几个字节 
+- Burst Type (Sequential & Interleave) //一般是顺序读取
+- Partial Self Refresh Type ( Full, 1/2, 1/4 Array ) //刷新方式,费电和速度成反比
+- Output Driver Strength Control ( Full, 1/2, 1/4, 1/8 ) //对外驱动能力,和刷新对应起来用
+• Internal Temperature Compensated Self Refresh //温度控制
+• Deep Power Down Mode
+• All inputs except data & DM are sampled at the positive going edge of the system clock(CK).
+• Data I/O transactions on both edges of data strobe, DM for masking.
+• Edge aligned data output, center aligned data input.
+• No DLL; CK to DQS is not synchronized.
+• LDM, UDM for write masking only.
+• Auto refresh duty cycle 
+- 7.8us for -25 to 85 °C //隔7.8us工作一次, 工作温度不能超过85度   刷新时间
+
+Address configuration
+我们的芯片,地址线中A10为特殊线，充电过程采样线
+A10 sampled during a PRECHARGE command
+determines whether the PRECHARGE applies to one bank (A10 LOW) or all banks (A10 HIGH)
+
+Mode Register Definition
+
+Extended Mode Register Set(EMRS) 
+
+AC Timming Parameters & Specifications
+
+QT6410_coreboard.pdf 第7页 第三页
+
+S3C6410X.pdf 
+120页 3 SYSTEM CONTROLLER
+139页 MEM_SYS_CFG 0x7E00_F120 R/W Configure memory subsystem 
+160页 位7
+189页 5 DRAM CONTROLLER
+193页 PnMEMCCMD Memc_cmd
+先配置好各个参数，再初始化芯片
+初始化芯片的方法在192页
+----------------------------
+#define HCLK 133000000
+#define nstoclk(ns)  (ns/(1000000000/HCLK)+1)
+
+P1MEMCCMD= 4; //配置模式
+
+/*文档中芯片的初始化过程MOBILE DDR SDRAM INTIALIZATION SEQUENCE并不完整，
+可以参考第一个DRAM CONTROLLER INITIALIZATION SEQUENCE ，有两步就是第一个句进入Config模式，
+和倒数第二句进入Go模式(文档写错)，最后一句通过判断P1MEMSTAT的值来确定是否已经进入Ready模式*/
+
+
+P1REFRESH = nstoclk(7.8*10^3) = 1038;
+
+P1MEMCFG2 = (1<<11)|(3<<8)|(1<<6)|(1<<1)|(1<<0); 0位和1位设置AXI和内存周期一致
+
+P1DIRECTCMD = (2<<18)|(2<<16); //对应EMRS模式，K4~PC.pdf 第八页,对应寄存器和地址，
+                   //bank地址为10,其余都为0,DriverStrength和Refreshed Area都是Full状态
+P1DIRECTCMD = (2<<18)|(3<<4)|(2<<0);//对应MRS模式,K4~PC.pdf 第六页bank地址为00,BurstLength为4，
+                    //BurstType为Sequential线性,CAS Latency根据第一页Operating Frequency，DDR为133Mhz，Note中写了CL为3
+
+
+----------------------------
+
+文档中的'2'b11中的'2'b猜测应该是之指令的位数,11是指令
+
+程序的位置相关性
+  程序执行加载地址 和程序链接时指定的链接地址的关系
+   位置无关
+     程序放到内存的任意地址都能执行
+     局部变量
+   位置相关
+     程序加载地址必须要和链接地址一致，否则不能执行
+     全局变量 //uart中有用到
+       查找方式链接时根据变量实际偏移加上链接地址作为全局变量的地址
+       执行根据链接算出的地址操作变量
+
+ 8K初始化  将程序读到ddr->跳转
+//vim ld.lds
+最上方 0x58000000 - 0x57000000 16M SVC栈
+       0x57000000 - 0x56000000 16M 中断栈
+       0x56000000 - 0x55000000 16M 代码 
+vim arm_boot.c
+vim start.s       //汇编bl是位置无关的,但是不能跳太远  C中跳转也是位置无关,通过偏移,给PC直接赋值，所以执行的main是main的链接地址了而不是通过偏移，与位置相关了
+vim main.c
+vim Makefile  将链接地址改了，这样找main就是找DDR里的了
+[root@dba arm_boot]# arm-linux-objdump -D arm > txt
+//.bss 是不存在的, 而赋值的.data段是真实存在的
+所以要清除 .bss段,否则.bss段的值都是随机值
+通过链接脚本
+    .就是当前地址
+ __bss_start = .;
+ . = ALIGN(4);
+        .bss : { *.o(.bss);}
+ __bss_end = .; 
+
+修改汇编
+ ldr r0,=__bss_start
+ ldr r1,=__bss_end
+
+ mov r2,#0 
+ 然后str 循环赋值
+=============================
+/*
+ * 清BSS段
+ */
+clear_bss:
+ldr r0, __bss_start /* find start of bss segment        */
+ldr r1, __bss_end /* stop here                        */
+mov r2, #0 /* clear                            */
+
+clbss_l:str r2, [r0] /* clear loop...                    */
+add r0, r0, #4
+cmp r0, r1
+ble clbss_l   //le 小于等于
+=============================
+
+
+
+/*ld.lds 括号中的nand.o(.text)表示nand.o中的代码段放这边,nand.o(.bss)表示nand.o的bss段放这边*/

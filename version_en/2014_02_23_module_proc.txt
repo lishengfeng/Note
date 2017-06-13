@@ -1,0 +1,259 @@
+2014/02/23
+
+在vim下
+ :cope
+切换到代码窗口 ctrl+w w
+保存：w
+切换到另一个窗口ctrl+w w
+:make
+会把编译信息打印出来，如果有错可以用enter到错误代码
+
+模块里的全局变量a，在装载的时候insmod test.ko a=10可以改变,用于测试
+
+在系统内核源码下 
+--------------------
+build/include/linux
+ls moduleparam.h
+
+[sa@localhost linux]$ less moduleparam.h 
+[sa@localhost linux]$ pwd
+/lib/modules/2.6.32-358.el6.x86_64/build/include/linux
+
+
+--------------------
+//6410内核
+[sa@localhost linux]$ ls moduleparam.h 
+moduleparam.h
+[sa@localhost linux]$ pwd
+/home/sa/linux_kernel/linux-2.6.28_smdk6410/include/linux
+[sa@localhost linux]$ 
+
+头文件中有个
+#define module_param(name, type, perm)                          \
+        module_param_named(name, name, type, perm)
+
+
+vim test.c
+
+module_param(a,int,0640); 指定a为int 类型 0640为权限(/*即使加了写权限,也没法写文件a)
+
+安装模块指定全局变量的值(必须指定module_param)
+insmod test.ko a=100
+
+[sa@localhost parameters]$ pwd
+/sys/module/test/parameters
+[sa@localhost parameters]$ ll
+总用量 0
+-rw-r----- 1 root root 4096 2月  23 09:37 a
+
+//insmod: error inserting 'test.ko': -1 File exists 模块未卸载错误
+
+vim test.c 也可以该字符的param
+//[root@localhost module]# insmod test string=hahaha
+
+//关于数组
+#define module_param_array(name, type, nump, perm)              \
+        module_param_array_named(name, name, type, nump, perm)
+名字,类型,指定的个数,权限
+
+[root@localhost module]# insmod test.ko array=10,14,20
+array 10 14 20
+count 3
+
+[root@localhost module]# insmod test.ko array=10,14
+array 10 14 3
+count 2
+
+
+--
+modinfo test.ko 
+查看模块信息
+
+//查看符号导出
+[root@localhost module_symbol]# ls
+Makefile
+[root@localhost module_symbol]# touch a.c b.c
+[root@localhost module_symbol]# ls
+
+[root@localhost module_symbol]# vim Makefile 
+================
+obj-m :=a.o b.o
+
+KERNEL := /lib/modules/`uname -r`/build
+
+all:
+        make -C $(KERNEL) M=`pwd` modules
+
+clean:
+        make -C $(KERNEL) M=`pwd` clean
+
+================
+[root@localhost module_symbol]# vim a.c b.c
+
+内核源码中函数默认是static 
+需要通过EXPORT_SYMBOL(foo); foo 为函数名 使foo在外部c文件能看到
+
+lsmod 查看模块信息
+
+//将多个c编译成一个模块
+只能有一个入口，一个出口
+函数可以不用EXPORT_SYMBOL，因为链接在一起了
+编辑Makefile
+=================
+obj-m :=abc.o
+abc-objs :=a.o b.o
+
+KERNEL := /lib/modules/`uname -r`/build
+
+all:
+        make -C $(KERNEL) M=`pwd` modules
+
+clean:
+        make -C $(KERNEL) M=`pwd` clean
+
+=================
+abc.o -- abc-objs 中abc是必须同名的
+
+
+//消息等级 默认是KERN_INFO
+
+[sa@localhost linux]$ less kernel.h
+[sa@localhost linux]$ pwd
+/lib/modules/2.6.32-358.el6.x86_64/build/include/linux
+
+找到
+#define KERN_EMERG      "<0>"   /* system is unusable                   */
+#define KERN_ALERT      "<1>"   /* action must be taken immediately     */
+#define KERN_CRIT       "<2>"   /* critical conditions                  */
+#define KERN_ERR        "<3>"   /* error conditions                     */
+#define KERN_WARNING    "<4>"   /* warning conditions                   */
+#define KERN_NOTICE     "<5>"   /* normal but significant condition     */
+#define KERN_INFO       "<6>"   /* informational                        */
+#define KERN_DEBUG      "<7>"   /* debug-level messages                 */
+
+=======================
+#include <linux/init.h>
+#include <linux/module.h>
+
+static int __init test_init(void)
+{
+        printk(KERN_INFO"hello kernel\n"); //printk 内核打印消息的函数
+        printk(KERN_EMERG"error_msg\n");
+        return 0;
+}
+
+static void __exit test_exit(void)
+{
+        printk("bye kernel\n");
+}
+
+module_init(test_init);//声明入口
+module_exit(test_exit);//声明出口
+MODULE_LICENSE("GPL"); //添加许可
+MODULE_AUTHOR("uplooking");
+MODULE_VERSION("0.1");
+MODULE_DESCRIPTION("module test");
+=======================
+
+// proc \ sysfs
+proc 和 sysfs 是内核创建出来的文件系统并挂在的
+proc 是进程号 cat可以查看信息
+
+/** [sa@localhost linux]$ less fs.h 讲字符设备时再看*/
+[sa@localhost linux]$ less proc_fs.h
+[sa@localhost linux]$ pwd
+/lib/modules/2.6.32-358.el6.x86_64/build/include/linux
+
+查找 create_proc_entry 和
+typedef int (read_proc_t)(char *page, char **start, off_t off,
+                          int count, int *eof, void *data);
+
+
+
+proc 的根为 proc/
+
+vim test.c
+================================
+#include <linux/init.h>
+#include <linux/module.h>
+#include <linux/fs.h>
+#include <linux/proc_fs.h>
+
+struct proc_dir_entry *proc;
+int my_read(char *page, char **start, off_t off,int count, int *eof, void *data)
+{
+        //想给用户态给的信息写在page中
+        return sprintf(page,"hello proc");
+}
+static int __init test_init(void)
+{
+        proc = create_proc_read_entry("myproc",0640,NULL,my_read,NULL);//这里的最后一个参数data和my_read函数里的最后一个要一致
+        if(proc==NULL){
+                printk("create proc error\n");
+                return -ENOMEM;
+        }
+        return 0;
+}
+
+static void __exit test_exit(void)
+{
+        remove_proc_entry("myproc",NULL);
+}
+
+module_init(test_init);
+module_exit(test_exit);
+MODULE_LICENSE("GPL");
+================================
+
+vim app-test
+================================
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <fcntl.h>
+#include <unistd.h>
+
+int main(int argc,char ** argv)
+{
+        int ret;
+        char buffer[1024];
+        int fd;
+        if((fd=open(argv[1],O_RDONLY))<0){
+                perror("open");
+                exit(1);
+        }
+        ret=read(fd,buffer,1024);
+        if(ret<0){
+                perror("read");
+                exit(1);
+        }
+        buffer[ret]='\0';
+        printf("%s\n",buffer);
+        close(fd);
+        return 0;
+}
+================================
+make app-test
+
+[root@localhost readonly]# rmmod test
+[root@localhost readonly]# insmod test.ko
+[root@localhost readonly]# ./app-test /proc/myproc
+hello proc
+
+
+//编辑可读写的proc
+查看proc_rw 文件
+
+[root@localhost proc_rw]# pwd
+/linux/proc_rw
+[root@localhost proc_rw]# rmmod test.ko
+[root@localhost proc_rw]# insmod test.ko
+[root@localhost proc_rw]# ./app-test /proc/proc_rw write linux
+[root@localhost proc_rw]# ./app-test /proc/proc_rw read
+linux
+
+作业
+在/proc/myproc/a rw
+在/proc/myproc/b rw 
+

@@ -1,0 +1,13 @@
+2013/09/08
+ alarm - set an alarm clock for delivery of a signal
+ pause - wait for signal
+ man 2 kill - send signal to a process
+ raise - send a signal to the current process 保证是原子操作
+ $$ shell的pid
+ sigemptyset, sigfillset, sigaddset, sigdelset, sigismember - POSIX sig-nal set operations.  初始化屏蔽,添加屏蔽信号
+ sigprocmask - examine and change blocked signals 使屏蔽字生效
+ sigpending - examine pending signals 是否有未决信号
+ sigaction - examine and change a signal action   UNIX用这个
+ int sigsetjmp(sigjmp_buf env, int savesigs); 保存屏蔽字
+ sigsuspend - wait for a signal 暂时改变屏蔽字,将屏蔽和暂停原子化
+ man 2 getitimer / getitimer, setitimer - get or set value of an interval timer

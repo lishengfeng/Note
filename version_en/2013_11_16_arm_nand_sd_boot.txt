@@ -1,0 +1,245 @@
+2013/11/16
+   嵌入式系统
+
+  就是专用的计算机，作为设备或者装置一部分，作用是控制 、辅助控制，运行检测
+
+  系统组成（ 内核，文件系统）
+     硬件
+        （bios grub) 
+        grub 从 bios获得权限 ，初始化硬件，引导内核 linux kernel
+        kernel 开始绑定根目录系统，开始启动各种系统进程
+        启动用户态进程(系统UNIX高编)
+        
+该课程目的
+   编程操作硬件：
+    1.引导kernel
+    2 . 内核驱动 硬件基础
+
+  要能写出bootloader
+
+  在嵌入式中 将 bios grub写成 bootloader
+
+  硬件基础，看懂原理图
+
+ 嵌入式开发环境基本搭建  我们所用板子为ARM 1176
+
+ SOC系统
+
+  显示控制器/显示控制单元  IPU
+  内存
+  USBhost、USBroot 
+   串口  UART
+  都放在一起，因为体积，功耗，成本
+ 
+ 如果是 红帽5 系统，串口选 Pl2303   如果340没法识别  ， Ubuntu或者小红帽6 则都行，尽量选质量好一点的
+
+ USB  A型口一般是主机用， B型口一般是设备用
+ 
+   datasheet  各种手册
+ 
+ 课程安排
+ 1 .  已有系统  镜像
+ 2.  给源码  编译
+ 3. 看手册， 写源码
+
+ 连网线  注意  1.  网卡尽量保持一个(无线网卡关闭) ２. 如果是虚拟机，要选择桥接方式.  3. 关闭windows和linux中的各种防火墙
+
+　rpm -aq | grep minicom　　　如果没有就找光盘安装
+
+　对minicom配置
+    su - root 
+　minicom -s 进入配置画面，使用不加-s
+   控制第三个串口配置　进入后　按对应字母控制
+　Ａ　硬件位置　例:  pc机　改为 /dev/ttyS0  如果是笔记本一般是　/dev/ttyUSB0  (如果有别的功能可能最后数字会不同)
+　Ｅ　比特率　　115200　8N1　
+　Ｆ/G 流　开始是关闭  
+  //lock fail 的原因是已经开过一次minicom了用ps -fax 查看并杀死进程
+
+　板子
+　　红色开关同时为上为ＳＤ　，同时为下为　ＮＡＮＤ
+　如果串口命令断无限循环启动，按板子复位　快速按任意键进入命令
+　*** Warning - bad CRC or NAND, using default environment    　　裸板没有设置过环境变量，校验失败提示，设置过后就不再警告
+
+　命令　　参数只要有数字都是１６进制　0x500000000 == 50000000
+　bootm   - boot application image from memory  一般用于启动内核
+　go      - start application at address 'addr'　(无法启动内核,因为无法传参数)　从特地内存地址启动程序
+　nand    - NAND sub-system　　　NAND的各种命令  擦出，写等等
+ ping    - send ICMP ECHO_REQUEST to network host 只能ping出通还是没通
+reset   - Perform RESET of the CPU 等同于复位键
+ tftpboot- boot image via network using TFTP protocol 下载  －－－－－ tftpboot 内存地址 文件名  －－－－－从某个IP->tftp_server-> 文件名    下载到内存地址（IP有环境变量中取得）
+ printenv- print environment variables
+ setenv  - set environment variables
+ saveenv - save environment variables to persistent storage
+
+
+#:printenv
+bootargs=root=/dev/mtdblock2 rootfstype=cramfs console=ttySAC0,115200   内核文件地址
+bootcmd=nand read 0xc0008000 0x100000 0x200000;bootm 0xc0008000  启动时操作的命令
+bootdelay=3   启动倒计时
+baudrate=115200 比特率, 决定串口的比特率
+ethaddr=00:40:5c:26:0a:5b    MAC地址：非开发板则需要买，开发可自己设置
+ipaddr=192.168.1.20          IP地址
+serverip=192.168.1.10        服务IP (让pc端以它匹配)
+gatewayip=192.168.1.1        网关 
+netmask=255.255.255.0        掩码
+stdin=serial
+stdout=serial
+stderr=serial
+
+ ctrl + a -> w 开启换行
+
+rpm -aq| grep tftp 确认有没有安装过
+-------------------------------------------
+linux 6
+cd /myiso
+[root@localhost myiso]# mount -o loop RHEL_6.4\ x86_64.iso  /mnt/
+[root@localhost myiso]# yum install tftp-server
+[root@localhost myiso]# rpm -qa |grep tftp-server
+
+-------------------------------------------
+vim /etc/xinetd.d/tftp   
+         将disable 中的值改为 no 启用
+    server_args 为目录路径  (可修改)  文件放在这才能下载
+
+ service xinetd restart 启动该sevice
+ netstat -au|grep tftp  查看是否启动,有值则启动
+
+ ifconfig eth0 192.168.1.10 将Pc端的地址配置到板子上的serverip地址
+
+   setup 将防火墙配置中反火墙关闭  tab切换  
+   将selinux关闭 vim /etc/selinux/config 第一句改成 SELINUX=disabled,重启机器
+   su - root ->   mii-tool看link 是否ok
+--------------------------------
+Linux 6 下 mii-tool 要加网卡 如:mii-tool eth0
+--------------------------------
+     看看网口的灯有没有亮
+     如果还没有办法连通则需要下载抓包起查看原因
+
+   0x50000000 - 0x57FFFFFF  128M 内存 ----> 相相差 0x08000000 十六进制一个0等于2进制 4个0   也就是8*2^(6*4) = (8*2^4) * 2^10 * 2^10 = 128 * 1024k *1024K = 128M
+        0x50000000 - 0x50008000 为配置
+                     0x57E00000 后为grub 
+    所以在0x50008000 - 0x57E00000 之间某个区域放入内核
+ 
+   0x70000000 - 0x7FFFFFF 256M 为寄存器
+
+pc端
+   tar xvf smdk6410.tar.bz2 
+   cd smdk6410 
+        datasheet为手册
+      images 为编译好的镜像
+        rootfs 文件系统
+        schema  原理图
+        src 源码
+        tools 将bootload 写到  板子的工具
+    cd images/
+    cp zImage /tftpboot/ 比较新的板子用 zIamage_2nd
+
+arm端
+
+   tftp 50008000 zImage  
+    bootm 50008000    和下载的内存地址对应               此时会失败，因为无根文件系统
+
+pc 端
+   [root@dba smdk6410]# cd rootfs/
+    [root@dba rootfs]# mkdir uplooking
+    [root@dba rootfs]# tar xvf rootfs.tar -C uplooking
+   [root@dba rootfs]# mv uplooking/ /
+   [root@dba /]# chmod 777 uplooking/
+    #vim /etc/export        添加一条  /uplooking *(rw,sync,no_root_squash)  将/uplooking添加  *表示所有连接机器的设备都能挂载  sync表示同步   no_root_squash 表示为压缩权限
+   #service nfs restart   重启nfs 服务 或者 /etc/init.d/nfs restart  /*在Ubuntu下使用的是 nfs-kernel-server*/
+   [root@dba /]# mount 192.168.1.10:/uplooking /mnt   测试能否挂在自己机器
+    mount查看挂载信息
+----------------------------------------------------------------------------
+如果启动内核后发现nfs是read-only
+可以用mount -o rw,remount / / 重新以rw挂一次根
+qtopia 启动图形界面
+如果要让自动重新挂载
+可以在根文件目录下
+uplooking]#vim etc/init.d/rcS
+末尾
+/bin/qtopia 前加一句
+mount -o rw,remount / /
+----------------------------------------------------------------------------
+
+arm 端
+
+        学习设置环境变量
+        setenv bootdelay 5  临时
+        saveenv
+
+    设置bootargs (别用tab键)
+        uplooking # setenv bootargs "root=/dev/nfs nfsroot=192.168.1.10:/uplooking ip=192.168.1.20 console=ttySAC0,115200"
+                                                                                                   用nfs格式挂载                                   nfs根文件绝对路径                      板子ip           板子串口(非和pc连接串口 一般就是ttySAC0)  波特率
+        sav
+
+    内存中已经无内核，重新下载内核
+    再启动
+
+    rm /etc/pointercal  删除配置，否则屏幕点击位置不对 
+    重启 下载内核，再启动 校准屏幕
+
+    setenv bootcmd "tftp 50008000 zImage;bootm 50008000"
+    saveenv
+-----------------------------------------------
+
+S3C NAND Driver, (c) 2008 Samsung Electronics
+S3C NAND Driver is using software ECC.
+NAND device: Manufacturer ID: 0xec, Chip ID: 0xda (Samsung NAND 256MiB 3,3V 8-bit)
+Creating 4 MTD partitions on "NAND 256MiB 3,3V 8-bit":
+0x00000000-0x00040000 : "Bootloader"
+0x00040000-0x00400000 : "Kernel"
+0x00400000-0x05400000 : "Rootfs"
+0x05400000-0x10000000 : "File System"
+
+NAND的信息
+
+arm 端
+    ls /dev/mtdblock* 就是四个区
+
+
+操作 NAND
+    nand erase 全擦
+    nand erase 起始  大小   （16进制）
+    nand write 内存  nand地址  大小  将内存写入nand地址  大小为"大小"        （*必须要先擦除）
+    nand read 内存地址 nand地址 大小        从nand地址开始读取 读指定大小 到内存地址
+
+    
+  [root@dba smdk6410]# cd images/
+  [root@dba images]# cp u-boot-nand.bin /tftpboot/
+
+arm端
+    uplooking # tftp 50000000 u-boot-nand.bin       (因为不启动内核，所以 可以在这个地址)
+   uplooking # nand erase 0 40000   －－－地址从刚刚的启动nand信息中可以获得(第一次可以将nand所有都erase)
+   uplooking # nand write 50000000 0 40000
+    reset       （如果出现ECC error 则从下载步骤开始重新操作一遍即擦除nand的bootLoader）
+    （如果SD卡操作有可能会出这个问题，这个时候，在SD卡使NAND启动后，先不改任何数据，将nand的boot擦了重新下载写上）
+
+
+
+
+
+    
+
+
+    
+
+    
+    
+    
+
+
+       
+
+
+   
+
+
+
+
+
+　
+
+    
+　
+
+  

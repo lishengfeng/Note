@@ -1,0 +1,178 @@
+2013/12/07
+ 启动过程   
+     6410芯片 有个8k RAM ，硬件自动将NAND的0地址开始的8K加载运行，这部分要用来初始化 1. 时钟        2.  NAND控制器，内存控制器 3.将NAND的剩余bootload和内核加载到内存运行
+ 点亮一个等，
+    
+    CP15 协处理器 负责管理 在SVC模式下才能操作，通过 mcr/mrc 去指定操作哪个  C0~C15 
+    灯一边是VCC 阴级接6410的某个I/O口，给阴极一个低电频，灯就亮了
+    上电后要马上执行则放在NAND的0地址
+
+    6410中间的1176 外叫外设, 控制外设都要操作它们的寄存器来实现需求，
+    看原理图操作灯
+[sa@dba schema]$ pwd
+/home/sa/arm/smdk6410/schema
+QT6410_coreboard.pdf 是指蓝板子部分   值钱
+QT6410_mainboard.pdf 是指绿板子部分  
+
+nLED  n指 nagtive
+
+mainboard 第七页
+coreboard 第五页
+引脚控制器
+Xhi_CSn/CE_CF0/EINT23/GPM0   GP为统一，M为组，0为组下的标号
+
+[sa@dba 6410]$ pwd
+/home/sa/arm/smdk6410/datasheet/6410      /*三星6410外设部分*/
+306页  GPIO
+308页 10.4 REGISTER DESCRIPTION   寄存器地址  命名可以错，地址不能有错 
+    找到 GPM*
+    10.5详细  -> 10.5.13  338页   GPMCON 功能
+        标号 对应字节位置  引脚功能描述
+        GPMDAT  对应的引脚    
+        GPMPUD P->pull  U->UP D->DOWN (00不费电)
+
+    
+ 反汇编  
+          arm-linux-gcc text.c -o text  
+          arm-linux-objdump -D text > txt
+          vim txt
+   运行C 必须先个初始化一个栈指针
+
+ 4G 内核1G ，用户3G ，所以每个进程4G，但是内核1G是公用的，所以用户所用地址不会在1G里，这1G是内核直接使用
+
+程序
+
+最后要ld-> objcopy变成2进制才能操作
+    
+[sa@dba hardwareControl]$ touch start.S
+[sa@dba hardwareControl]$ touch led.c
+[sa@dba hardwareControl]$ touch delay.c
+[sa@dba hardwareControl]$ touch main.c
+[sa@dba hardwareControl]$ touch regs.h              /*寄存器头文件*/
+[sa@dba hardwareControl]$ touch Makefile
+[sa@dba hardwareControl]$ vim Makefile 
+
+Makefile 从上往下 走，从下往上找依赖
+－－－－－－－－－－－－－－
+CC :=arm-linux-gcc  //编译器
+AS :=arm-linux-as   //汇编器
+LD :=arm-linux-ld   //链接器
+OBJCOPY := arm-linux-objcopy //编译成 二进制
+
+ELF := arm  //目标文件名称定义
+BIN := arm.bin //二进制文件名称定义
+OBJS := start.o main.o led.o delay.o  //链接，有顺序
+all:$(ELF)
+    $(OBJCOPY) $< -O binary /tftpboot/$(BIN) //大写o  
+$(ELF):$(OBJS) //链接  ELF为中间值
+    $(LD) $^ -O $@ －Ttext 0   //$^是所有依赖文件,  $@是目标  , -Ttext 指定代码段起始地址 0
+%.o:%.c  //.o依赖于.c  因为下面写了一步到.o所以不需要经过.s
+    $(CC) -c $< -o $@  //$< 第一个依赖   /*前面必须是TAB键,语法规则*/
+%.o:%.s //部分.o直接由由.s生成，所以需要这个OA
+    $(AS) $< -o $@
+clean:
+        rm -rf $(OBJS) $(ELF)
+
+－－－－－－－－－－－－－－
+/** 改了头文件 则要删除所有.o 再make 如果只改了.c则可以不用*/
+
+[sa@dba hardwareControl]$ vim start.S 
+－－－－－－－－－－－－－－－－－
+        .align 2   //对齐
+        .global _start  //声明标号是全局的
+        .text //代码端开始标号
+_start:
+
+－－－－－－－－－－－－－－－－－
+/** 6410手册 116 memory map 查看内存地址 找到GPIO 把地址告诉arm核*/
+[sa@dba arm]$ pwd
+/home/sa/arm/smdk6410/datasheet/arm
+要告诉1176核走外设总线
+
+    协处理器指令　mcr(r->c) mrc(c->r)倒着传　数据传输　从Rn <-> Cn (CP15)
+    mcr P15,第一个操作数，Rn,Cn,Cm,第二个操作数
+    mrc P15,op-1,Rn,Cn,Cm,Op_2  //CP15 有C0-C15　每个Cn都有多个， 第一个操作数和Cm,第二操作数来据的操作哪个Cn 从手册查
+从1176jzfs手册查
+    
+内存117页　寄存器第一条指定了高位的地址，从第一个开始　描述中ＳＦＲ特殊寄存器，用于控制硬件　/* 0x7000_000*/　(外设)
+
+(1176 ) System Control Coprocessor　169页协处理器
+    查找c15  3.2.49   c15, Peripheral Port Memory Remap Register 内核->外设 342页
+        orr r0,#0x13　/*10011  256MB*/　将size的五位赋上值
+
+栈得放高段 mov sp,#0x2000　满段下移　正好是8k的位置
+
+编写头文件　指明寄存器地址　从6410的338页
+
+#define GPMCON *(volatile long *)0x7F008820 
+#define GPMDAT *(volatile long *)0x7F008824 
+#define GPMPUD *(volatile long *)0x7F008828 
+
+因为操作循环需要时间，所以用循环来控制时间
+
+裸板上也能定义变量int i
+
+//按键　　原理图找到
+mainboard 7页
+coreboard 4页
+因为按键板子一段是电阻　，另一端接地，所以在没摁下时是高位１
+
+//通过u-boot的go命令测试灯
+[root@dba led]# vim start.S
+----------------------------
+        .align 2
+        .global _start
+        .text
+_start:
+        stmfd sp!,{r0-r12,lr}   //压栈，保护r0-r12,lr
+        bl    main
+        ldmfd sp!,{r0-r12,pc}   //出栈,将r0-r12复原, pc=lr　就完成了跳回
+
+----------------------------
+[root@dba led]# vim Makefile
+－－－－－－－－－－－－－－－－－－－－
+将-Ttext 后跟的值改为将来需要将程序下载的地址，因为链接指定了将来全局变量的地址
+－－－－－－－－－－－－－－－－－－－－ 
+[u-boot-sd]# tftp 510000000 arm.bin
+[u-boot-sd]# go 51000000
+
+//裸板比较慢,且会重启(6410看门狗会在一小段时间发送一个硬件信号，然后重启,而u-boot会关闭这个，/复杂系统会有用，内核会养狗，内核崩溃，则狗没人养会重启，从而复活内核/)
+/** 如果while(1)　delay时间比较长就能看出灯没有循环完就重启了 */
+
+看6410 pdf  1136页 34.WATCHDOG TIMER
+
+ldr 对应32位　int
+ldrh 对应 16位　short
+ldrb 对应8位　bite
+
+mov必须是合法的数，不合法的需要分开多步用与或等实现　合法是将每个16进制数对应的1左移你能用8位给框起所有的１
+伪指令可以不合法的数
+
+时钟, 倍频率 给cpu和两个总线分配
+
+6410 　　120页,  3.  SYSTEM CONTROLLER
+
+ARMCLK for CPU
+HCLK for AXI/AHB
+PCLK for PCKL 
+
+高速总线　ＡＨＢ
+低速总线　ＡＰＢ
+PLL锁相簧
+
+122页　时钟的结构
+
+125页   梯形分流，方形分频,div可设置分频,圆方与门
+
+
+作业，用汇编实现
+
+
+
+
+
+
+
+
+
+

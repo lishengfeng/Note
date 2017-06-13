@@ -1,0 +1,40 @@
+2013/10/27
+ msgget - get a message queue identifier
+   ftok  - convert a pathname and a project identifier to a System V IPC key
+ msgctl - message control operations
+ msgrcv, msgsnd - message operations 接收端会阻塞如果没有消息
+ ipcs 查看创建的系统的消息队列
+ ipcrm  - remove a message queue, semaphore set or shared memory id 命令删除一个消息队列
+ 
+ 用于多进程的互斥锁(无论线程还是进程都可以用)
+ semget - get a semaphore set identifier
+ semctl - semaphore control operations
+ semop, semtimedop - semaphore operations
+
+ mutex用于线程的互斥锁
+
+ shmat, shmdt - shared memory operations 共享内存
+
+网络编程
+ netstat -anup / -antp (查看网络状态)
+ socket - create an endpoint for communication
+ man 2 bind - bind a name to a socket
+ listen - listen for connections on a socket
+
+ SOCK_STREAM 面向连接可靠  （TCP）
+  面向连接:1.双方都处于连接状态
+          2.包按照顺序
+ SOCK_DGRAM (UDP) 不保证顺序(概率很低) 把每个当作独立的报文处理 
+
+ vim /etc/protocols 关于协议代号
+
+ bzero - write zero-valued bytes   网络编程必须，对addr清零
+
+ man -k so 查找前面两个字母为so的所有命令 
+ man htonl,  htons,  ntohl,  ntohs - convert values between host and network 用于port的取得将主机端口转换成网络字端口
+ 一般自定义端口不用1024一下，因为1024一般已经分配给了各个协议，作为周之的端口如80,21等等
+ 
+
+       byte order
+
+

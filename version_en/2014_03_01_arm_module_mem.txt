@@ -1,0 +1,406 @@
+2014/03/01
+ 以后将/uplooking 作为根文件系统
+
+/** 解压根文件系统 */
+[root@localhost rootfs]# pwd
+/root/kernel/rootfs
+[root@localhost rootfs]# tar xvf root_qtopia.tar.gz -C /uplooking/
+
+[root@localhost kernel]# pwd
+/root/kernel/kernel
+[root@localhost kernel]# cp linux-2.6.28_smdk6410.tar.bz2 /uplooking/
+
+/** 解压内核源码 */
+[root@localhost uplooking]# pwd
+/uplooking
+[root@localhost uplooking]# tar xvf linux-2.6.28_smdk6410.tar.bz2 
+
+//删除已经无用的压缩源码
+[root@localhost uplooking]# pwd
+/uplooking
+[root@localhost uplooking]# rm linux-2.6.28_smdk6410.tar.bz2 
+
+[root@localhost linux-2.6.28_smdk6410]# pwd
+/uplooking/linux-2.6.28_smdk6410
+[root@localhost linux-2.6.28_smdk6410]# cp smdk6410_config .config
+[root@localhost linux-2.6.28_smdk6410]# vim Makefile 
+==============
+CROSS_COMPILE   := arm-linux-
+==============
+//末尾不能右空格
+[root@localhost linux-2.6.28_smdk6410]# make menuconfig
+
+/** vim Makefile +1612  直接打开并跳到 1612行 */
+
+Device drivers -> Graphics support -> Support for frame buffer devices -> Select LCD Type (UT_LCD7A 800*480) ->  ( ) UT_LCD43C_D 480*272 
+
+退出 并保存
+
+[root@localhost linux-2.6.28_smdk6410]# cd drivers/video/samsung/
+[root@localhost samsung]# ls s3cfb_UT_LCD43C_D\ .c
+s3cfb_UT_LCD43C_D .c
+[root@localhost samsung]# mv s3cfb_UT_LCD43C_D\ .c s3cfb_UT_LCD43C_D\.c
+[root@localhost samsung]# cd -
+/uplooking/linux-2.6.28_smdk6410
+[root@localhost linux-2.6.28_smdk6410]# pwd
+/uplooking/linux-2.6.28_smdk6410
+[root@localhost linux-2.6.28_smdk6410]# make
+
+
+[root@localhost linux-2.6.28_smdk6410]# cp arch/arm/boot/zImage /tftpboot/
+
+[root@localhost uplooking]# pwd
+/uplooking
+[root@localhost uplooking]# vim /etc/exports 
+============
+/uplooking *(rw,sync,no_root_squash)
+============
+[root@localhost uplooking]# service nfs restart
+
+/** lsusb 命令可以查看u转串口有没有识别 */
+
+[root@localhost /]# minicom -s
+
+    | A -    Serial Device      : /dev/ttyUSB0                              |
+    | B - Lockfile Location     : /var/lock                                 |
+    | C -   Callin Program      :                                           |
+    | D -  Callout Program      :                                           |
+    | E -    Bps/Par/Bits       : 115200 8N1                                |
+    | F - Hardware Flow Control : No                                        |
+    | G - Software Flow Control : No                                        |
+    |                                                                       |
+    |    Change which setting? 
+
+[u-boot-sd]#
+===============
+set bootcmd "tftp 50008000 zImage;bootm 50008000"
+save
+ctrl+a w 添加换行
+set bootargs "root=/dev/nfs nfsroot=192.168.1.10:/uplooking ip=192.168.1.20 console=ttySAC0,115200"
+save
+res
+/** arm-linux-gcc -version -v 查看gcc版本*/
+/** bin/busybox 必须有可执行权限，否则会panic (默认是可执行的)*/
+/** 如果tftp无效
+ *  netstat -au |grep tftp 查看tftp是否打开 
+ *  vim /etc/xinetd.d/tftp 将路径设置位 /tftpboot 将disable 改为no
+ *  service xinetd restart 重启服务
+ */
+===============
+
+模块部分
+将之前写的模块放到共享文件夹,用开发板的编译器再都重新编译
+vim Makefile 
+=======================
+obj-m :=test.o
+
+#KERNEL := /lib/modules/`uname -r`/build
+KERNEL := /uplooking/linux-2.6.28_smdk6410/
+
+all:
+        make -C $(KERNEL) M=`pwd` modules
+
+clean:
+        make -C $(KERNEL) M=`pwd` clean
+
+======================= 
+make 
+将app-test 也得重新在这里编译或者在x86下用arm-linux-gcc 编译
+------------------
+rmmod test 无效
+rmmod: chdir(2.6.28.6): No such file or directory
+1.最简单解决方法:
+arm 端
+cd /lib/modules/
+mkdir 2.6.28.6
+再删除，虽然回报rmmod:module 'test' not found 错误, 但是lsmod 发现test已经被删除了
+2.完全的解决方法
+//pc 端 cd /uplooking/sbin/ 
+  ll lsmod 发现是个链接，链接到busybox 
+[root@localhost rootfs]# pwd
+/root/kernel/rootfs
+
+  将源码中任意一个busybox 解压 /** 1.20.2 */
+[root@localhost rootfs]# tar xvf busybox-1.20.2.tar.bz2  -C ~/
+
+[root@localhost busybox-1.20.2]# pwd
+/root/busybox-1.20.2
+[root@localhost busybox-1.20.2]# make menuconfig
+
+
+Busybox Settings  --->   Build Options  --->   ()  Cross Compiler prefix (NEW)  写arm-linux- 
+
+Linux Module Utilities  --->  [ ] Simplified modutils (NEW) //去除星号
+================
+ [*] modinfo (NEW)                                                                                                │ │  
+  │ │                                           [ ] Simplified modutils                                                                                          │ │  
+  │ │                                           [*]   insmod                                                                                                     │ │  
+  │ │                                           [*]   rmmod                                                                                                      │ │  
+  │ │                                           [*]   lsmod                                                                                                      │ │  
+  │ │                                           [ ]     Pretty output (NEW)                                                                                      │ │  
+  │ │                                           [*]   modprobe                                                                                                   │ │  
+  │ │                                           [ ]     Blacklist support (NEW)                                                                                  │ │  
+  │ │                                           [*]   depmod  
+================
+
+
+------------------
+make && make install
+
+消息最后提示了  ./_install//usr/sbin/udhcpd -> ../../bin/busybox
+安装后的路径
+
+[root@localhost bin]# pwd
+/root/busybox-1.20.2/_install/bin
+[root@localhost bin]# cp busybox /uplooking/bin
+cp：是否覆盖"/uplooking/bin/busybox"？ y
+
+//内核相关
+/** [sa@localhost note_from_teacher]$ pwd
+/media/GHOST/linux/Linux_3/note_from_teacher
+[sa@localhost note_from_teacher]$ evince note3.pdf 
+
+*/
+
+man 2 open 系统调用
+
+vim /usr/include/asm/unistd.h  //asm表示涉及到底层的东西
+vim /usr/include/asm/unistd_32.h
+
+[root@localhost linux-2.6.28_smdk6410]# pwd
+/uplooking/linux-2.6.28_smdk6410
+[root@localhost linux-2.6.28_smdk6410]# cd arch/arm
+[root@localhost arm]# cd kernel/
+[root@localhost kernel]# vim calls.S
+
+/**arch/x86/kernel 中叫 syscall_table_32.S */
+
+calls.S
+末尾可添加系统调用
+例如/*361*/ CALL(sys_mysyscall) 注册一个新的系统调用,名前面必须是sys_ 
+
+[root@localhost kernel]# touch mysyscall.c
+/**
+[sa@localhost linux]$ pwd
+/uplooking/linux-2.6.28_smdk6410/include/linux
+[sa@localhost linux]$ ls syscalls.h 
+syscalls.h
+*/
+[root@localhost kernel]# vim mysyscall.c 
+==================================
+#include <linux/syscalls.h>
+
+//asmlinkage 关键字只是为了在x86兼容,是拿栈传参,在arm端没有意义
+asmlinkage long sys_mysyscall(int a,int b)
+{
+        int ret;
+        ret = a+b;
+        printk("%s %d\n",__FUNCTION__,ret);
+        return ret;
+}
+
+==================================
+[root@localhost kernel]# vim Makefile 
+==================================
+obj-y           := compat.o elf.o entry-armv.o entry-common.o irq.o \
+                   process.o ptrace.o setup.o signal.o \
+                   sys_arm.o stacktrace.o time.o traps.o
+
+obj-y += mysyscall.o  //追加
+
+==================================
+[root@localhost linux-2.6.28_smdk6410]# pwd
+/uplooking/linux-2.6.28_smdk6410
+[root@localhost linux-2.6.28_smdk6410]# make -j4
+//
+ CC      arch/arm/kernel/mysyscall.o
+//
+[root@localhost linux-2.6.28_smdk6410]# cp arch/arm/boot/zImage /tftpboot/
+cp：是否覆盖"/tftpboot/zImage"？ y
+重启板子
+
+//写用户态调用
+[root@localhost syscall]# pwd
+/uplooking/linux/syscall
+[root@localhost syscall]# touch syscall.c
+[root@localhost syscall]# vim syscall.c 
+============================
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/syscall.h>
+
+int main()
+{
+        int ret;
+        ret = syscall(361,10,17);
+        printf("ret %d\n",ret);
+        return 0;
+}
+============================
+或
+============================
+#include <stdio.h>
+#include <stdlib.h>
+
+int mysyscall(int a,int b) //open
+{
+    int ret;
+    //swi加偏移
+/**
+[sa@localhost asm]$ pwd
+/uplooking/linux-2.6.28_smdk6410/arch/arm/include/asm
+[sa@localhost asm]$ vim unistd.h 
+#define __NR_OABI_SYSCALL_BASE  0x900000
+*/
+//swi返回值放到r0
+
+    __asm__ __volatile__(
+        "mov r0,%1\n"
+        "mov r1,%2\n"
+        "swi #(361+0x900000)\n"
+        "mov %0,r0\n"
+        :"=&r"(ret)
+        :"r"(a),"r"(b)
+        :
+    );
+    return ret;
+}
+int main()
+{
+    int ret;
+    ret = mysyscall(10,17);
+    printf("ret %d\n",ret);
+    return 0;
+}
+============================
+
+[root@localhost syscall]# arm-linux-gcc syscall.c -o syscall
+arm 端
+cd linux/syscall
+./syscall
+
+//
+[root@localhost linux]# pwd
+/uplooking/linux-2.6.28_smdk6410/include/linux
+[root@localhost linux]# vim syscalls.h 
+/SYSCALL_DEFINE(name) 找到 #define SYSCALL_DEFINE(name) static inline long SYSC_##name /** ##是拼接的意思 */ 这是无参调用的syscall宏定义
+//SYSCALL_DEFINEx 有参调用的宏定义 ->对应 #define SYSCALL_DEFINE(1,2,3,4,5,6) 
+
+[root@localhost kernel]# pwd
+/uplooking/linux-2.6.28_smdk6410/arch/arm/kernel
+[root@localhost kernel]# vim mysyscall.c
+==========================
+#include <linux/syscalls.h>
+
+//asmlinkage 关键字只是为了在x86兼容,是拿栈传参,在arm端没有意义
+/*asmlinkage long sys_mysyscall(int a,int b)
+{
+        int ret;
+        ret = a+b;
+        printk("%s %d\n",__FUNCTION__,ret);
+        return ret;
+}*/
+
+SYSCALL_DEFINE2(mysyscall,int,a,int,b)
+{
+        int ret;
+        ret = a+b;
+        printk("%s %d\n",__FUNCTION__,ret);
+        return ret;
+}
+
+==========================
+[root@localhost kernel]# cd ../../../
+[root@localhost linux-2.6.28_smdk6410]# make -j4
+[root@localhost linux-2.6.28_smdk6410]# cp arch/arm/boot/zImage /tftpboot/
+cp：是否覆盖"/tftpboot/zImage"？ y
+重启板子
+
+测试:
+arm 端
+cd linux/syscall
+./syscall
+
+如何真正封装成一个函数
+将用户态的syscall.c 函数的实现 做成 .so 动态库 在头文件中添加或者链接上
+
+//内存 note 2.pdf
+4k一页
+页框 C2一个地址 -> 一级页框-> 二级页框(包含实际的物理内存地址)  c2 32=12+8+12
+第一级/第二级/4k中的实际数据位置的偏移量  参考arm架构
+
+伙伴系统
+页-> slab(申请小内存)
+
+在/uplooking/内核/ 下配置ctags
+
+vim -t alloc_pages
+
+在include/linux/gfp.h
+
+选择1 Enter
+/**
+[sa@localhost linux]$ ls gfp.h
+gfp.h
+[sa@localhost linux]$ pwd
+/uplooking/linux-2.6.28_smdk6410/include/linux
+*/
+
+alloc_pages(gfp_t gfp_mask, unsigned int order) //order 是 2的order次方
+
+vim -t page_address
+vim -t __free_pages
+vim -t __get_free_pages
+vim -t __free_pages
+vim -t alloc_page
+vim -t __get_free_page
+
+kmalloc 申请 内存
+kzalloc -> k zero alloc 申请的内存全部填充0
+kfree 释放内存
+
+vmalloc 虚拟内存连续 物理内存不一定连续
+/**别给硬件用，硬件需要连续的物理地址,不用虚拟地址 */
+
+/** vim -t dma_alloc_coherent 用时再学 */
+
+cp -r proc_rw/ alloc_page
+[root@localhost alloc_page]# vim test.c
+=============================
+#include <linux/init.h>
+#include <linux/module.h>
+#include <linux/mm.h>
+
+struct page *page;
+void *virtual;
+
+static int __init test_init(void)
+{
+        page = alloc_pages(GFP_KERNEL,0);
+        if(page==NULL){
+                return -ENOMEM;
+        }
+        virtual = page_address(page);
+        sprintf(virtual,"mem test");
+        return 0;
+}
+
+static void __exit test_exit(void)
+{
+        printk("%s\n",(char *)virtual);
+        __free_pages(page,0);
+}
+module_init(test_init);
+module_exit(test_exit);
+MODULE_LICENSE("GPL");
+
+=============================
+[root@localhost alloc_page]# make
+[root@localhost alloc_page]# insmod test.ko
+[root@localhost alloc_page]# rmmod test.ko
+[root@localhost alloc_page]# dmesg
+
+
+作业:kmap kunmap 函数干嘛用的
+

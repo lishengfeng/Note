@@ -1,0 +1,83 @@
+2014/01/12
+ bootloader 目的启动内核
+cd sm6410/src
+[sa@localhost src]$ tar xvf linux-2.6.28.tar.bz2
+cd Documentation
+cd arm
+pwd
+/smdk6410/src/linux-2.6.28_smdk6410/Documentation/arm
+[sa@localhost arm]$ less Booting 
+1. Setup and initialise the RAM.
+2. Initialise one serial port.
+3. Detect the machine type.
+4. Setup the kernel tagged list.
+5. Call the kernel image.
+按照文档初始化
+给pc 赋值跳到内核位置
+/** 注意：6410的内核的串口没有用到FIFO,所以u-boot-loader初始化内核别用fifo*/
+RAM/serial port/nand/时钟/cp15
+//机器码 内核和u-boot需要一致 在3.Detect the machine type. 详细里写了位置，找到smdk6410 1626
+0x50000100 放了内核参数
+[sa@localhost arm]$ pwd
+/home/sa/smdk6410/src/linux-2.6.28_smdk6410/arch/arm
+[sa@localhost arm]$ less include/asm/setup.h 
+tag{tag_head;u}
+tag_header size以四字节为单位 +3/4 tag tag的标记
+1. 第一个的tag 必须是ATAG_CORE   包含header 32位是四字节, 所以是 (5个元素* 4 +3)/4 = 5;
+4.最后一个必须是ATAG_NONE,size = 0 表示参数的结束
+2.中间 mem
+size 128M = 128*1024*1024 
+start 0x50000000
+3.bootargs通过cmdline配置 size写具体bootargs 字符大小 +3/4
+strtoul---- string to unsigned long
+linux-2.6.28_smdk6410#ls lib/string.c
+go 汇编 //可以跳回 blx 寄存器 返回的程序负责包寄存器的值赋值给pc  /**或者 void(*fun)(void) = 地址; fun(); */
+//硬件信息
+[sa@localhost s3c6410]$ pwd
+/home/sa/smdk6410/src/u-boot-1.1.6_smdk6410/cpu/s3c64xx/s3c6410
+[sa@localhost s3c6410]$ less speed.c 
+最后要用bootm启动，因为go 不初始化寄存器
+关于命令的实现
+u-boot-1.1.6_smdk6410/common里
+
+交互
+main 里用while定时，设置一个全局标识，如果时间到了跳出while 正常执行，否则执行交互
+
+建立索引
+1.在需要建立索引的目录下 ctag -R
+2.配置索引
+[sa@localhost ~]$ vim /home/sa/.vimrc
+-----------------------------------------
+set tag=/home/sa/arm/NET/tftp/tags
+-----------------------------------------
+或者在vim .c文件中 set tag=tags
+
+vim -t tftp_down    // 前提 tag必须是全局的
+或者 将光标放在要查找的函数，ctrl+} 进入 ctrl+o退出
+
+================================================
+Ubuntu下
+配置过程：
+1、下载并安装ctags，终端输入命令：
+    sudo apt-get install ctags
+2、建立tags索引文件
+       在终端进入到需要索引的文件目录后，输入命令：
+    ctags -R *
+    这时候检查一下你的代码目录下是不是多了一个tags文件，有的话就代表创建成功了，这就是索引文件。
+3、先root。注意这里的root不能只是输入su，而是要输入：
+      su - 
+    为什么我也不知道，反正只输入su的话只获取了部分root权限，不能修改只读文件。
+4、向vim注册索引文件tags的路径，
+     root之后终端的符号会从$变成#，我们就可以输入：
+     gedit /etc/vim/vimrc
+     很简单，这句话是用gedit打开vim的配置文件。
+5、打开文件后，在最后一行添加（其实在哪儿无所谓啦）：
+   set tags=/home/sweetie/linux/tags
+       “=”之后写的路径是指刚才建立的tags文件的目录，如果搞不清楚的话就打开tags文件的属性来查一下。
+6、关闭终端重新打开，你就可以用vim在任意地方查看有关Linux的函数原形啦查看方法嘛，就是打开一个文件，比如：
+   vim kernal.c
+   把光标移动到某个函数调用上，ctrl+]就可以跳到这个函数所在的位置了。ctrl+t用于返回原来的函数
+7、不只可以查函数的位置，还可以查变量的定义位置。方法有一点小差别。查变量定义的时候，打开vim，在vim的命令行中（就是在冒号后面）输入：
+   tj variable
+     想要跳转回来的时候还是使用ctrl+t。
+=====================================================

@@ -1,0 +1,249 @@
+2014/03/22
+
+//看门狗
+ioctl 不同参数，实现不同
+自己定义看门狗有的操作的宏定义
+WDT_READ /剩余时间 --> WDT_REMAIN
+
+unlocked_ioctl(struct file *fp,unsigned int request,unsigned long cmd)
+
+15625HZ 1s 
+最大16位 最多4s
+
+用户态调用ioctl 为ioclt(fd,request,cmd)
+申请内存需要slab.h
+ioremap -> uaccess.h
+file_options->linux/fs.h
+
+Linux 内核是非实时进程
+所谓的实时进程,是指优先级高、
+
+man sched_setscheduler
+参数1,进程：0为当前进程,参数2 类型；参数3
+在同等调度策略里的优先级,sched_get_priority_max(SCHED_FIFO) //man 2 ~ 获得最大优先级
+普通用户:
+SCHED_OTHER   the standard round-robin time-sharing policy;
+SCHED_BATCH   for "batch" style execution of processes; and
+SCHED_IDLE    for running very low priority background jobs.
+优先级高级别 FIFO>RR  (一般不能乱用,用于需要严格时间的,比如看门狗喂狗)
+SCHED_FIFO    a first-in, first-out policy; and
+SCHED_RR      a round-robin policy.
+
+./app_wtd
+ps
+kill 进程id  开发板重启
+
+
+/** 去看看Makefile 怎么写
+make -f app.mk //-f 指定makefile 否则默认Makefile
+
+//内核时间
+proc 核心头文件 include/linux/proc_fs.h
+proc局限性 只能读取4k
+内核不会出现段错误，所以得小心
+cat /proc/mydir/time 来调用内核提供的读操作
+
+获取时间 getnstimeofday
+用于两个时间的相对
+短延时
+mdelay/udelay 是占着cpu不放，和睡眠四秒不同
+长延时
+6410 PMw 5个timer 其中timer4 定时一个周期执行一个中断处理函数，调度器就在这
+HZ是一秒中数据量
+jiffies 从内核启动到现在的滴答数，一次即来一个中断 jiffies 32位，有可能溢出
+为了能更快反映出错误 初始值不会给0， jiffies=-5*60*HZ
+给了-5分钟，如果需要实际时间需要加上5分钟
+可以通过jiffies 记长时，但是有溢出危险
+可以用time_after函数来处理溢出，但是不能多于285天...
+这个延时占着cpu
+
+//睡眠延时 不能在中断中使用
+因为HZ=100 所以调度器每10ms掉一次 ，所以睡眠的延时不能少于10ms
+
+ssleep 秒睡眠 /** 实现是 msleep*1000 */
+msleep 毫秒睡眠 /** 是通过下面两个函数实现的 */
+//配套用
+set_current_state(TASK_INTERRUPTIBLE)/**设置当前进程状态为,不可被中断打断*/
+schdule_timeout(jiffies+HZ)  /** 睡眠，超时唤醒,而schedule(),虽然让出处理器，却还在运行队列中,cpu无法进入idle状态,不利于电源管理*/
+
+定时器头文件include/linux/timer.h
+timer4 -> 进程调度器/timer/jiffies++/... 
+
+timer_list-> expires剩余时间 function执行函数, data是给function的参数
+
+init_timer
+add_timer
+del_timer() 如果定时器正在执行中,会等待执行完毕再摘下
+setup_timer宏定义
+mod_timer
+
+//Kconfig
+
+基于字符型的图形库
+
+make menuconfig --> ...--> 调用Kconfig 
+
+cp -r mywdt 内核/drivers/
+在上一层drivers的Makefile文件末尾添加
+=============
+obj-y+=mywdt/
+或者
+obj-(CONFIG_MY_WDT) += mywdt/
+//根据make menuconfig 的 bool MY_WDT的值来决定要不要编译
+=============
+//obj-y 将 模块装入内核
+/**
+obj-n 不编译
+obj-m 编译成模块
+obj-y 编译
+*/
+将mywdt的Makefile改为
+====================
+obj-y += mywdt.o
+====================
+
+make menuconfig将结果保存到.config
+
+Kconfig---> make menuconfig根据Kconfig---> 产生 .config
+make---> Makefile --->根据.config
+
+cd 内核/drivers/mywdt
+touch Kconfig
+/** 下面这段可以无
+cd ..
+vim Kconfig
+末尾追加
+source "drivers/mywdt/Kconfig
+*/
+/** 因为实际上要让drivers/mywdt/Kconfig有效,要在arch/arm/Kconfig
+  文件中添加: source "drivers/mywdt/Kconfig"
+  父目录的drivers/Kconfig的修改可以不要 */
+cd mywdt
+vim Kconfig
+=======================
+/** 在复制该段代码时需要把所有注释删除 */
+config MY_WDT  会在make menuconfig中追加一个菜单
+    bool "select s3c6410 wdt"
+    default n   //n为没选 ,y为选中
+    help
+    If you select... //帮助说明
+
+config MY_TEST
+    tristate "select my_test"
+    default n
+    help
+    xxxx
+menu "S3C6410 test for Kconfig" //添加一个多级菜单
+
+config LED
+    bool "support for led"
+    default n
+    help
+    xxxxxxxxxxx
+//多选一
+choice
+    prompt "Select lcd driver"
+    default LCD2
+    config LCD1
+        bool "3.5"
+        help 
+        xxxxxxxxxxxxxxxx    
+    config LCD2
+        bool "4.3"
+        help 
+        yyyyyyyyyyyyyyy
+    config LCD3
+        bool "7.0"
+        help 
+        zzzzzzzzzzzzzz
+endchoice
+config IRQ
+    bool "support for irq"
+    default n
+    help
+    xxxxxxxxxxxxxxxxxxx
+config IRQ_VEC
+    bool "support for irq_vec"
+    default n
+    help 
+    dddddddddddddddddddddddd
+config ADC 
+    bool "support for adc"
+    default n
+    help 
+    aaaaaaaaaaaaaaaaaaaaaa
+config TIMER
+    bool "support for timer"
+    default n
+    depends on IRQ  //依赖于 IRQ,IRQ选了才出来
+    help
+    nnnnnnnnnnnnnnnnnnnnnnnnn
+config TS
+    bool "support for ts"
+    default n
+    depends on ADC && IRQ
+    help
+    bbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+config NETWORK
+    bool "support for irq_vec"
+    default n
+    depends on IRQ || IRQ_VEC
+    help 
+    dddddddddddddddddddddddd
+config WDT_IRQ
+    bool "wdt_irq"
+    default n
+    help
+    kkkkkkkkkkkkkkkkkk
+config WDT_RESET
+    bool "reset"
+    default n
+    depends on !WDT_IRQ //与wdt_irq互斥
+    help
+    kkkkkkkkkkkkkkkkkk
+config AC97
+    bool "support for ac97"
+    default n
+    help
+    kkkkkkkkkkkkkkkkkk
+config WM9714
+    bool "support for wm9714"
+    default n
+    select AC97  //会强制选择AC97
+    help
+    kkkkkkkkkkkkkkkkkk
+if ADC
+    config BCD
+        bool "bcd"
+        default n
+        help
+        xxxxxxxxx
+endif
+config STRING_TEST
+        string "string value"
+        help
+        kkkkkk
+config INT_TEST
+        int "int value"
+        default 100
+        help 
+        xxxx
+endmenu
+=======================
+在make menuconfig 的device driver下有 添加
+如果选上了,在.config 就会有 CONFIG_MY_WDT=y
+--对应Makefile--> obj-$(CONFIG_LED3)               += xx.o
+=================
+CONFIG_STRING_TEST="mystring"
+CONFIG_LCD2=y
+CONFIG_INT_TEST=100
+//这些在.config会添加,并在编译是包括在头文件中,
+可以在.c中直接引用 如:
+if(CONFIG_LCD2){
+      printk("CONFIG_LCD2 is selected\n");
+}else{
+      printk("CONFIG_LCD2 is not selected\n");
+}
+=================
+
+Kconfig 语法
