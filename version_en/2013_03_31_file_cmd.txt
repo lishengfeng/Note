@@ -1,125 +1,131 @@
 2013/03/31
 
-一切皆文件
-命令 格式：ls -l 无/目录名/文件名 目录名文件名 依此类推
-     ls -ld 目录名
+"Everything is a file" decribes one of the defining features of Unix, and its derivatives.
 
-    -rwxr-xr-x 1 lishengfeng lishengfeng 1338675 Mar 30 16:09 ULE-112.pdf
+Commands:
 
-    1. 第一个字母：文件属性
-    - 普通文件  p 管道文件（一般用于俩文件或进程交互数据）  s 套积字文件(一般用于多进程交互数据) d 目录文件
-    l 链接文件(类Windows快捷方式) c 字符型设备  b 储存设备
+ls - list directory contents
+-l  use a long listing format.
+-d  list directories themselves, not their contents.
+-h  print human readable size
 
-    2. 第二到第十个字母：权限
-    前三个：用户权限 中间三个：组权限 最后三个：其他情况权限
+Output:
+-rwxrw-r--    10    root   root 2048    Jan 13 07:11 afile.exe
+?UUUGGGOOOS   00  UUUUUU GGGGGG ####    ^-- date stamp and file name are obvious ;-)
+^ ^  ^  ^ ^    ^      ^      ^    ^
+| |  |  | |    |      |      |    \--- File Size
+| |  |  | |    |      |      \-------- Group Name (for example, Users, Administrators, etc)
+| |  |  | |    |      \--------------- Owner Acct
+| |  |  | |    \---------------------- Link count (what constitutes a "link" here varies)
+| |  |  | \--------------------------- Alternative Access (blank means none defined, anything else varies)
+| \--\--\----------------------------- Read, Write and Special access modes for [U]ser, [G]roup, and [O]thers (everyone else)
+\------------------------------------- File type flag
 
-    3. 第一个数字： 硬连接数
-    入口数   
+File type:
+    Regular file(-)
+    Directory file(d)
+    Block file(b)
+    Character device file(c)
+    Named pipe file or just a pipe file(p)
+    Symbolic link file(l)
+    Socket file(s)
+
     
-    4. 之后俩用户名：
-    第一个：用户名字
-    第二个：组名字
+stat - display file or file system status
 
-    5. 长数字：文件大小   ls -lh  (-h(humen readable))  ls --help
-
-    6. 最后修改时间
-
-    7. 文件名
-    
-命令 格式：stat 文件名
-    详细文件信息
-
-      File: `ULE-112.pdf' (文件名)
-  Size: 1338675         Blocks: 2624       IO Block: 4096   regular file(文件类型)
+  File: `ULE-112.pdf' 
+  Size: 1338675         Blocks: 2624       IO Block: 4096   regular file
 Device: fd00h/64768d    Inode: 91554070    Links: 1
-Access: (0755/-rwxr-xr-x) (权限) Uid: (  500/lishengfeng)   Gid: (  500/lishengfeng)
-Access: 2013-03-30 16:12:22.000000000 +0800          (进入时间)
-Modify: 2013-03-30 16:09:52.000000000 +0800      (修改内容时间)
-Change: 2013-03-30 16:09:52.000000000 +0800      (修改属性时间)
+Access: (0755/-rwxr-xr-x) Uid: (  500/lishengfeng)   Gid: (  500/lishengfeng)
+Access: 2013-03-30 16:12:22.000000000 +0800 - the last time the file was read
+Modify: 2013-03-30 16:09:52.000000000 +0800 - the last time the file was modified(content has been modified)
+Change: 2013-03-30 16:09:52.000000000 +0800 - the last time the meta data of the file was changed(e.g. permissions)
 
+cat - concatenate files and print on the standard output
+-n number all output lines
 
-    cat -n 文件名  读取文件 -n为显示行号 
-    less 文件名 读取文件 (用于文件过长，会停留在第一屏) 上下方向件滚动 q退出
-    tailf /var/log/secure(*该文件需要root权限) 用于读取动态的文件， ctrl + c退出 可以用于监听log
-    gedit 文件名  读写文件
-    head -n 10 文件名 显示该文件头十行
-    tail -n 10 文件名 显示该文件尾十行
-    tac 文件名   从下往上读
-    rev 文件名   左右镜像读
-    touch 文件名  创建文件
-    gedit 文件名  (save) 创建文件
-    ln -s file2 file 3 (file2为目标，file3为链接文件名)
-    vim 无/文件名  
-        Insert按键/i
-        Esc按键 退出编辑
-        :q退出
-        :w保存
-        :q! 修改后不保存退出
-        :wq 保存并退出
-        非编辑模式：/查找信息   定位到查找信息  n查找下一个 /  shift + n 查找上一个
-        查找 "/"  /\/  用\转义符
-        :1,$s/blues/zrror/gc   其中s表示替换 从第一行到最后一行($)将blues替换为zrror  /*三个"/"为分隔符可以替换为@#等等 */
-            其中g可有可无， 无g则只改该行第一个发现的blues.  g -> global
-            其中c可有可无， 有c则每发现一个都和用户进行交互
+less - similar to more, but it has many more features. more is a filter for paging through text one screenful at a time. 
 
-        模式：
-            1.Insert模式
-            2.: 冒号模式 (各种操作帮助)
-                ：set nu 显示行号
-                ：set nonu 不显示行号
-            3.命令模式
-                u 撤销上次操作
-                Ctrl + r 撤销上次命令
-                dd 剪切光标行
-                yy 复制光标行
-                p 光标下行粘贴  P 光标上行粘贴
-                v 加键盘操作  选行
-                Ctrl + v 选列
-                    d 剪切
-                    y 复制
-     vim -o 文件1 文件2 上下俩窗口 依此类推
-     vim -O 文件1 文件2 左右俩窗口 依此类推
-        切换窗口  Ctrl+w , w
-        退出全部窗口  :qa
-         which 文件名   查找环境变量中的命令(局限于环境变量)
-     locate 文件名  查找数据库中文件  (之前手动运行updatedb，否则未更新则有可能数据变更无反应)
+tailf - follow the growth of a log file
 
-     find 目录名(例：/usr/或/) -type l (/*普通文件用f而不是- */)  寻找该类型文件
-     find 目录名  -name “文件名”    /* ?为占位符  *为不定占位符 模糊查找用*/
-     find 目录名(例:/home/)  -user/-group 用户名   查找属于该用户的文件
-     find 目录名  -mmin -10   查找十分钟以内改动文件  -m -> modify; min -> 分钟(time天 只有这俩种,以当前时间为基点) ,(10准10分,-10十分以内，+10十分之前)
-     find /home/ -mmin -10 -exec ls -l {} \;    {}中存放前面命令结果  -exec 执行后面命令(rm等)   \;转义符结束 
-     find /home/ -mmin -10 -ok ls -l {} \;  每一条都进行交互操作
+gedit - text editor for the GNOME Desktop
 
-     echo "内容" > 文件名   新建文件并将内容写进去
-    
-     grep 内容 文件名
-     grep -r "内容" /目录/  递归寻找目录下含“内容"的文件
-     grep -E "^内容" 目录名  查找目录下包含以内容为开头的文件  -E 添加条件
-     grep -E "内容$" 目录名  查找目录下包含以内容为结束的文件  
-         grep -E "内容.*内容" 目录名   /* 一个.为一个占位符, *表示他前面一个字符为任意0个或多个 .*或者t*等  */
-         grep -E "内容1|内容2" 目录名  超找包含内容1或者内容2的文件
-     grep -E "root[a-z]" 目录名   [范围]可以为固定的也可以用 - 连接范围(只占一个字符) 例如：[acedf] [a-z] [a-zA-Z0-9] ([^a-z] a-z取反 )
-     grep -E -o "(内容)+" 目录名    ()中内容按一个组来查找, + 代表一个或者多个, -o 每找到一个显示出来 
-     grep -v 内容 文件名   显示除含内容的行数
-     内容 >  文件名 重定向
-         内容 >> 文件名 追加重定向
-         错误信息 2> 文件名 错误信息重定向  而正确信息会被显示出来   
-     全部重定向  &>   (没有全部追加重定向,用 >> abc 2>>bcd)
-     grep 内容 目录 | grep 内容 目录  其中|为未名管道, 将前一个结果递给下一个命令,可无限制管道个数
-         tty   显示当前终端对应的设备文件位置
-     echo "内容" > 终端位置   将内容显示在该终端
-     ** ssh 用户名@ip地址 "echo 你好 > 终端位置" 
-         gzip  文件  压缩该文件
-         gunzip 文件(.gz文件) 解压文件
-         bzip2  文件  压缩该文件
-         bunzip2 文件(.bz2文件) 解压文件
-     tar cvf 打包文件名.tar 文件1 文件2 文件3 依此类推  c 创建 v显示过程 f指定名字
-         tar tvf 打包文件名.tar   t显示
-         tar xvf 打包文件名.tar      解压文件(-C 指定目录)  解压缩文件夹(到指定目录)   -C directory DIR)  
-     tar rvf 打包文件名.tar 文件1 文件2  往tar中追加 文件1 文件2
-     tar zcvf 打包文件名.tar.gz 打包并压缩成gz压缩包  <-> tar zxvf 打包文件名.tar.gz
-         tar jcvf 打包文件名.tar.bz2 打包并亚错成bz2压缩包 <-> tar jxvf 打包文件名.tar.bz2
-     
-    
-    
+head - output the first part(default 10 lines) of files
+-n print the first NUM lines instead of the first 10
+
+tail - opposite to head
+
+tac - cancatenante and print files in reverse - rev "cat"
+
+rev - reverse lines characterwise
+
+touch - change file timestamps
+
+ln - make links between files
+-s make symbolic links instead of hard links
+
+vim
+
+ which - locate a command
+
+locate - find files by name. locate reads one or more databases by updatedb(8) and writes file name matching at least one of the PATTERNSs to standard output, one per line.
+          so basically, we need to run updatedb command before locate.
+
+find - search for files in a directory hierarchy
+-type find files by type(regular file type is f)
+-name find by name(wildcard ? means any character while * means 0 or more characters)
+-user uname File is owned by user uname
+-mmin n File was last modified exactly n minutes ago(-m(modify) can be replaced by c or a. min(minute) can be replaced by time(means day). +n stands for greater than n. -n stands for less than n. n stands for exactly n.
+-exec command {} \; execute the command to the result from find
+-ok command {} \; like -exec but ask the user first
+
+echo - display a line of text
+echo "test" > file replace all the content in the file with test
+echo "test" >> file append test to the file
+
+grep - print lines matching a pattern
+-r recursive
+-E interpreta PATTERN as an extended regular expression
+-v invert the sense of matching, to select non-matching lines.
+
+PATTERN - man grep
+
+Commands with a single bracket overwrite the destination's existing contents.
+
+Overwrite
+> - standard output
+< - standard input
+2> - standard error
+&> - stdout & stderr
+
+Commands with a double bracket do not overwrite the destination's existing contents.
+
+Append
+>> - standard output
+<< - standard input
+2>> - standard error
+>>file.txt 2>&1 - stdout & stderr
+
+| - piping - What this operator does is feed the output from the program on the left as input to the program on the right
+
+tty - print the file name of the terminal connected to standard input
+
+echo "test" > /dev/pts/5 - display test at /dev/pts/5(result of tty)
+ssh username@id_addr "echo test > /dev/pts/11" - display test at other user's tty
+
+gzip - compress files to .gz
+gunzip - expand .gz files
+
+bzip2 - compress files to .bz2
+bunzip2 - expand .bz2 files
+
+tar - The GNU version of the tar archiving utility
+c create
+v verbosely list files processed
+f use archive file or device ARCHIVE e.g. tar cvf new.tar file1 file2 file3
+t list the contents of an archive
+C change to directory DIR
+x extract file from an archive e.g. tar xvf archived.tar -C ./temp/
+r append files to the end of an archive e.g. tar rvf old.tar newfile1 newfile2
+z --gzip e.g. tar zcvf new.tar.gz <-> tar zxvf new.tar.gz
+j --bzip e.g. tar jcvf new.tar.bz2 <-> tar jxvf new.tar.bz2
