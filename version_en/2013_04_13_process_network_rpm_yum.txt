@@ -1,112 +1,95 @@
 2013/04/13 
 
-1.ps -aux   显示当前所有进程    a 所有用户进程 ax所有进程 u user   
-  ps -eo   "pid,comm"  只显示pid 和comm   e选中所有进程 o fomat
+ps - report a snapshot of the current processes
+ps axu  to see every process on the system using BSD syntax
+    a - all process with a terminal
+    x - all process owned by you
+    ax - all processes 
+    u - the user whose file access permissions are used by the process
+ps -eo "pid,comm"    -   will only show the pid and command
+    -e select all process
+    -o specify user-defined format
 
-2.kill [1,9,15] pid    1,挂载   9,杀死   15,打断  
-  kill -l 显示参数作用  其中(9,19)由内核控制
-  Ctrl + C   用的是 2
+kill - send a signal to a process
+kill [1,9,15] pid - 1:SIGHUP 9:SIGKILL 15:SIGTERM(default)
+kill -l - to list available signals
+Ctrl + c - uses 2:SIGINT
 
-3* lsof -p 进程pid   显示进程详细信息 
-   ltrace -p 进程pid  库追踪进程 (发kill信号退出)
-   strace -p 进程pid  系统进程追踪
+lsof - list open file information about files opened by processes
+    -p pid - excludes or selects the listing of files for the processes whose optional process PID numbers are in the comma-separated set pid
+ltrace - a library call tracer - intercept and record the dynamic library calls (use kill to exit)
+    -p pid
+strace - trace system calls and signals
 
-4 network:
-    ipv4:
-    保留的段(一般不用):
-            172.16
-        10.
-    ip地址   192.168.1.254
-    子网掩码  网络,主机   255.255.255.0   /24
-    
-    ifconfig -a   a列举全部网卡(不加则显示活动网卡)
-    ifconfig eth0  显示该网卡信息
-    ifconfig eth0 10.0.0.1 netmask 255.0.0.0 设置ip地址和网关 (临时)
-    ipconfig eht0 up/down 启用和禁用  信息中有显示
-    neat-tui 打开网卡设置界面 (永久) 得重启网络生效
+Network:
+    IP address: 192.168.1.254
+    Subnet mast: 255.255.255.0 = /24
+
+    ifconfig - configure a network interface
+    ifconfig -a - display all interfaces which are currently available, even if down
+    ifconfig eth0 - display interface eth0
+    ifconfig eth0 10.0.0.1 netmask 255.0.0.0 - set interface ip_addr and netmask temporary
+    ipconfig eth0 up/down - active eth0 or shut it down
+    -----------------------------------------------------
+    (belows are only work for Centos & RetHat)
+    neat-tui - use UI to set network permanently
     cat/vim /etc/sysconfig/network-scripts/ifcfg-eth1
-        ONBOOT=no 每次不自动起动
-    /etc/init.d/network  操作网卡 
-    route -n 显示路由表 -n为地址显示(不加为域名)
+        ONBOOT=no Don't automatically start on boot
+    /etc/init.d/network - manipulate networ
+    -----------------------------------------------------
+    route - show / manipulate the IP routing table
+    -n show numerical addresses instead of trying to determine symbolic host names
 
-    DNS 将域名转换为ip地址 也在neat-tui内设置
-    cat /etc/resolv.conf    DNS信息
-        cat /etc/hosts  主机信息
-    dig 域名    解析该域名,一个域名可有多个地址(有网络才行)
-    ping 地址 [-f][-c5]  -f为洪水包,测丢包率, -c 发包次数5次    ttl为允许走的路由器数量
-            64 bytes from 192.168.1.173: icmp_seq=4 ttl=64 time=0.055 ms
-    mtr 地址 查询过了那些路由器,一般用于查询哪个路由器丢包
-    traceroute -n 地址   路由信息   print the route packets trace to network host
-    
-    HTTP超文本协议/FTP文件传输协议
-        curl http://192.168.1.254 在命令提示符中显示网页(支持ftp)
-        elinks http://192.168.1.254  显示字符网页,能显示简单的网页
-        wget [-r] http://192.168.1.254/rhel5.repo  从网页地址下载文件(支持ftp)   -r 为递归下载
+    DNS stands for domain name system whose main job is to translate domain name like www.uu.se to IP addresses
+    cat /etc/resolv.conf - DNS resolver configuration file
+    cat /etc/hosts - static table lookup for hostnames
+    dig - DNS lookup utility - dig @server name type
+    ping - sned ICMP ECHO_REQUEST to network host
+    -f flood ping - This provides a rapid display of how many packets are being droopped (only super-user may use this option)
+    -c count - stop after sending count ECHO_RQUEST packets
+    The TTL(from ping output) represents the maximum number of IP routers that the packet can go through before thrown away.
+    mtr addr - a network diagnostic tool - report as round-trip-response times in miliseconds and the percentage of packetloss
+    traceroute -n addr - print the route packets trace to network host
 
-    FTP
-    curl ftp://...  查看ftp信息
-    wget ftp://...  下载ftp资源
-    lftp ftp://...   之后就是进入linux命令    可以用cd/ls/get/put  ... get为下载..put为上传.  mget * 为全部下载 ,mirror可下载目录
+    HTTP - Hypertext transfer protocol
+    FTP  - File transfer protocol
+    curl URL - transfer a URL - transfer data from or to a server
+    elinks URL - similar with curl
+    wget - the non-interactive network downloader.
+    -r recursive
+    lftp - a sophisticated file transfer program supporting a number of network protocols. Like bash, it has job control and uses the readline library for input
 
-    chmod [-R] 777 pub/   设置目录权限    7为111,rwx  所以是所有权限 [-R]递归 包括了子目录
-    chown ftp [-R] /var/ftp/pub  也可以授予身份 ftp用户身份 .ftp组身份 [-R]递归 包括了子目录
-    chown .ftp /var/ftp/pub
-    chown ftp.ftp /var/ftp/pub
+chmod - change file mode bits
+-R recursive
+e.g. chmod -R 777 pub/ 7 means 111(rwx). 777 is for user, root and others
 
-    /usr/sbin/ 中的命令只有root能用
-    NFS(Linux网上邻居)
-    showmount -e 192.168.1.254   -e  Show the NFS server’s export list.
-    mount 192.168.1.254:var/ftp /本地目录/      (入口挂上)  可用cp拷贝命令(要有权限)
-    umount /本地目录/ 
-    CIFS(Windows网上邻居)    
-    smbclient -L 192.168.1.254 --user blues      L 显示名字 后面blues为已知用户名(匿名访问则可以不用)
-    smbclient //192.168.1.254/blues --user blues   进入该网上邻居资源 (入口挂上)  可用get,put命令(要有权限) 第一个blues为共享名字
-
-    RPM：
-    rpm -q httpd  显示已安装的含有httpd的包   q为query
-    rpm -qa    显示已安装的所有包
-        rpm -qi httpd-2.2.3-63.el5   显示含有该包名的包的详细信息
-        rpm -ql httpd-2.2.3-63.el5   查询安装的各个包的位置
-    rpm -qf httpd-2.2.3-63.el5   查询该包属于哪个包
-    
-    rpm -ivh strace-4/5.1805.el5_5.5.i386.rpm                安装
-    rpm -ivh --force strace-4/5.1805.el5_5.5.i386.rpm    强制安装
-    rpm -ivh --nodeps apr-util-1.2.7-11.el5_5.2.i386.rpm     忽略关系安装
-
-    rpm -e apr-util   删包
- 
-    YUM：一般用于装有依赖关系的包
-    yum -ql httpd       查看包信息
-    yum search httpd       在仓库中搜索包
-    yum install httpd      安装
-    yum remove httpd       删除
-    yum install httpd-2.2.3-63.el5_5.5.i386.rpm     安装,自动找依赖包
-    yum install *rpm
-    yum list  显示包list
-    yum grouplist  显示组包
-    yum groupinstall "Development Tools" "Development Libraries" 组安装
-        --nogpgcheck   不检查
-
-    mkdir /var/ftp/RHEL5
-        mount /dev/cdrom /var/ftp/RHEL5/ 手动挂载光驱
-    vim /etc/yum.repos.d/rhel5.repo   (配置yum仓库包)可以按照要求新建配置(把光盘上的Server整个配置上就行)
-    =============
-    [rhel-Server]
-    name=Server
-    baseurl=file:///var/ftp/RHEL5/Server   (yum包位置)
-    enabled=1
-    gpgcheck=0
-    ============
-
-    SOURCE
-    编译安装    gpaint-2.0.3.3.tar.gz 进入该目录下
-    ./configure    
-    ./configure --prefix=/usr   编译到哪个位置
-    ./configure --help查看帮助信息
-        > Makefile
-    make 生成二进制
-    make install 编译
-    安装时多看看install 和readme
+chown - change file owner and group
+-R recursive
+e.g.
+    chown root /u - change the owner of /u to "root".
+    chown root:staff /u - Likewise, but also change its group to "staff".
+    chown -hR root /u - change the owner of /u and subfiles to "root".
 
 
-    
+/usr/bin - binaries usable for gerneral system-wide binaries
+/usr/sbin - same as above, but for scripts with superuser(root) privileges required.
+
+NFS stands for Network File System - allow a user on a client computer to access files over a computer network much like local storage is accessed.
+showmount -e 192.168.1.254   -e  Show the NFS server’s export list.
+
+mount - mount a file system
+e.g.
+    mount 192.168.1.254:var/ftp /local_directory/
+    umount /local_directory/
+    sudo mount -o remount,rw / - remount / as readable/writable
+
+CIFS(used by Windows) stands for common internet file system which is the standard way that computer users share files across corporate intranets and the Internet    
+
+smbclient - ftp-like client to access SMB/CIFS resources on servers
+e.g.
+    smbclient -L 192.168.1.254 --user blues      L list --user sets the SMB username or username and password
+    smbclient //192.168.1.254/blues --user blues  - mount the file
+
+Package Manager
+RPM
+YUM
