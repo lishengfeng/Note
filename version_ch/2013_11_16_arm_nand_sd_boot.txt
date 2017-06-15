@@ -5,15 +5,15 @@
 
   系统组成（ 内核，文件系统）
      硬件
-		（bios grub) 
-		grub 从 bios获得权限 ，初始化硬件，引导内核 linux kernel
-		kernel 开始绑定根目录系统，开始启动各种系统进程
-		启动用户态进程(系统UNIX高编)
-		
+        （bios grub) 
+        grub 从 bios获得权限 ，初始化硬件，引导内核 linux kernel
+        kernel 开始绑定根目录系统，开始启动各种系统进程
+        启动用户态进程(系统UNIX高编)
+        
 该课程目的
    编程操作硬件：
-	1.引导kernel
-	2 . 内核驱动 硬件基础
+    1.引导kernel
+    2 . 内核驱动 硬件基础
 
   要能写出bootloader
 
@@ -118,37 +118,37 @@ Linux 6 下 mii-tool 要加网卡 如:mii-tool eth0
    0x50000000 - 0x57FFFFFF  128M 内存 ----> 相相差 0x08000000 十六进制一个0等于2进制 4个0   也就是8*2^(6*4) = (8*2^4) * 2^10 * 2^10 = 128 * 1024k *1024K = 128M
         0x50000000 - 0x50008000 为配置
                      0x57E00000 后为grub 
-	所以在0x50008000 - 0x57E00000 之间某个区域放入内核
+    所以在0x50008000 - 0x57E00000 之间某个区域放入内核
  
    0x70000000 - 0x7FFFFFF 256M 为寄存器
 
 pc端
    tar xvf smdk6410.tar.bz2 
    cd smdk6410 
-		datasheet为手册
+        datasheet为手册
       images 为编译好的镜像
-		rootfs 文件系统
-		schema  原理图
-		src 源码
-		tools 将bootload 写到  板子的工具
-	cd images/
-	cp zImage /tftpboot/ 比较新的板子用 zIamage_2nd
+        rootfs 文件系统
+        schema  原理图
+        src 源码
+        tools 将bootload 写到  板子的工具
+    cd images/
+    cp zImage /tftpboot/ 比较新的板子用 zIamage_2nd
 
 arm端
 
    tftp 50008000 zImage  
-	bootm 50008000    和下载的内存地址对应               此时会失败，因为无根文件系统
+    bootm 50008000    和下载的内存地址对应               此时会失败，因为无根文件系统
 
 pc 端
    [root@dba smdk6410]# cd rootfs/
-	[root@dba rootfs]# mkdir uplooking
-	[root@dba rootfs]# tar xvf rootfs.tar -C uplooking
+    [root@dba rootfs]# mkdir uplooking
+    [root@dba rootfs]# tar xvf rootfs.tar -C uplooking
    [root@dba rootfs]# mv uplooking/ /
    [root@dba /]# chmod 777 uplooking/
-	#vim /etc/export        添加一条  /uplooking *(rw,sync,no_root_squash)  将/uplooking添加  *表示所有连接机器的设备都能挂载  sync表示同步   no_root_squash 表示为压缩权限
+    #vim /etc/export        添加一条  /uplooking *(rw,sync,no_root_squash)  将/uplooking添加  *表示所有连接机器的设备都能挂载  sync表示同步   no_root_squash 表示为压缩权限
    #service nfs restart   重启nfs 服务 或者 /etc/init.d/nfs restart  /*在Ubuntu下使用的是 nfs-kernel-server*/
    [root@dba /]# mount 192.168.1.10:/uplooking /mnt   测试能否挂在自己机器
- 	mount查看挂载信息
+    mount查看挂载信息
 ----------------------------------------------------------------------------
 如果启动内核后发现nfs是read-only
 可以用mount -o rw,remount / / 重新以rw挂一次根
@@ -164,22 +164,22 @@ mount -o rw,remount / /
 arm 端
 
         学习设置环境变量
-		setenv bootdelay 5  临时
-		saveenv
+        setenv bootdelay 5  临时
+        saveenv
 
-	设置bootargs (别用tab键)
-		uplooking # setenv bootargs "root=/dev/nfs nfsroot=192.168.1.10:/uplooking ip=192.168.1.20 console=ttySAC0,115200"
+    设置bootargs (别用tab键)
+        uplooking # setenv bootargs "root=/dev/nfs nfsroot=192.168.1.10:/uplooking ip=192.168.1.20 console=ttySAC0,115200"
                                                                                                    用nfs格式挂载                                   nfs根文件绝对路径                      板子ip           板子串口(非和pc连接串口 一般就是ttySAC0)  波特率
-		sav
+        sav
 
-	内存中已经无内核，重新下载内核
-	再启动
+    内存中已经无内核，重新下载内核
+    再启动
 
-	rm /etc/pointercal  删除配置，否则屏幕点击位置不对 
-	重启 下载内核，再启动 校准屏幕
+    rm /etc/pointercal  删除配置，否则屏幕点击位置不对 
+    重启 下载内核，再启动 校准屏幕
 
-	setenv bootcmd "tftp 50008000 zImage;bootm 50008000"
-	saveenv
+    setenv bootcmd "tftp 50008000 zImage;bootm 50008000"
+    saveenv
 -----------------------------------------------
 
 S3C NAND Driver, (c) 2008 Samsung Electronics
@@ -194,38 +194,38 @@ Creating 4 MTD partitions on "NAND 256MiB 3,3V 8-bit":
 NAND的信息
 
 arm 端
-	ls /dev/mtdblock* 就是四个区
+    ls /dev/mtdblock* 就是四个区
 
 
 操作 NAND
-	nand erase 全擦
-	nand erase 起始  大小   （16进制）
-	nand write 内存  nand地址  大小  将内存写入nand地址  大小为"大小"        （*必须要先擦除）
-	nand read 内存地址 nand地址 大小        从nand地址开始读取 读指定大小 到内存地址
+    nand erase 全擦
+    nand erase 起始  大小   （16进制）
+    nand write 内存  nand地址  大小  将内存写入nand地址  大小为"大小"        （*必须要先擦除）
+    nand read 内存地址 nand地址 大小        从nand地址开始读取 读指定大小 到内存地址
 
-	
+    
   [root@dba smdk6410]# cd images/
   [root@dba images]# cp u-boot-nand.bin /tftpboot/
 
 arm端
-	uplooking # tftp 50000000 u-boot-nand.bin       (因为不启动内核，所以 可以在这个地址)
+    uplooking # tftp 50000000 u-boot-nand.bin       (因为不启动内核，所以 可以在这个地址)
    uplooking # nand erase 0 40000   －－－地址从刚刚的启动nand信息中可以获得(第一次可以将nand所有都erase)
    uplooking # nand write 50000000 0 40000
-	reset       （如果出现ECC error 则从下载步骤开始重新操作一遍即擦除nand的bootLoader）
- 	（如果SD卡操作有可能会出这个问题，这个时候，在SD卡使NAND启动后，先不改任何数据，将nand的boot擦了重新下载写上）
+    reset       （如果出现ECC error 则从下载步骤开始重新操作一遍即擦除nand的bootLoader）
+    （如果SD卡操作有可能会出这个问题，这个时候，在SD卡使NAND启动后，先不改任何数据，将nand的boot擦了重新下载写上）
 
 
 
 
 
-	
+    
 
 
-	
+    
 
-	
-	
-	
+    
+    
+    
 
 
        

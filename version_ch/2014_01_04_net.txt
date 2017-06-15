@@ -83,8 +83,8 @@ ubuntu12.04下安装wireshark
        $sudo wireshark
 
        因为要读取网卡信息，所以需要管理员权限执行。
-	   
-	   从软件中心里面安装完wireshark 后通过下面命令打开
+       
+       从软件中心里面安装完wireshark 后通过下面命令打开
 sudo wireshark
 
 首次打开后, 可能会遇到下面的问题

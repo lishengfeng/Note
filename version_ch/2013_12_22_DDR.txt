@@ -2,9 +2,9 @@
  RAM  SRAM 静态,上电就能用
       DRAM(DDR2) 电容，需要动态刷新,上电需要配置才能用
         -> DRAM 原始
-	   SDRAM 能跟上CPU节奏(需要相同时钟源) 
-	     -> SDR SDRAM // Single data rate 
-	        DDR SDRAM //double data rate 一个周期两次数据传输
+       SDRAM 能跟上CPU节奏(需要相同时钟源) 
+         -> SDR SDRAM // Single data rate 
+            DDR SDRAM //double data rate 一个周期两次数据传输
 
 [sa@dba store]$ ls
 K4X51163PC.pdf  K9F2G08U0A.pdf  K9F2G08U0C.pdf.pdf
@@ -15,7 +15,7 @@ K4X51163PC.pdf
 最小存储单元-电容,
 8个电容一个字节,多行多列形成bank,bank不能过大,所以多个bank(阵列)
 32M x16 Mobile-DDR SDRAM //类型 和 规模 32M*16条线 
-	因为原理图上说了有两片所以是32M*16*2字，而算容量以字节(8个字)为单位,所以大小为32M*16*2/8=128M
+    因为原理图上说了有两片所以是32M*16*2字，而算容量以字节(8个字)为单位,所以大小为32M*16*2/8=128M
 FEATURES
 1.8V power supply, 1.8V I/O power
 • Double-data-rate architecture; two data transfers per clock cycle
@@ -77,9 +77,9 @@ P1REFRESH = nstoclk(7.8*10^3) = 1038;
 P1MEMCFG2 = (1<<11)|(3<<8)|(1<<6)|(1<<1)|(1<<0); 0位和1位设置AXI和内存周期一致
 
 P1DIRECTCMD = (2<<18)|(2<<16); //对应EMRS模式，K4~PC.pdf 第八页,对应寄存器和地址，
-			       //bank地址为10,其余都为0,DriverStrength和Refreshed Area都是Full状态
+                   //bank地址为10,其余都为0,DriverStrength和Refreshed Area都是Full状态
 P1DIRECTCMD = (2<<18)|(3<<4)|(2<<0);//对应MRS模式,K4~PC.pdf 第六页bank地址为00,BurstLength为4，
-				    //BurstType为Sequential线性,CAS Latency根据第一页Operating Frequency，DDR为133Mhz，Note中写了CL为3
+                    //BurstType为Sequential线性,CAS Latency根据第一页Operating Frequency，DDR为133Mhz，Note中写了CL为3
 
 
 ----------------------------
@@ -110,11 +110,11 @@ vim Makefile  将链接地址改了，这样找main就是找DDR里的了
 //.bss 是不存在的, 而赋值的.data段是真实存在的
 所以要清除 .bss段,否则.bss段的值都是随机值
 通过链接脚本
-	.就是当前地址
+    .就是当前地址
  __bss_start = .;
  . = ALIGN(4);
         .bss : { *.o(.bss);}
- __bss_end = .;	
+ __bss_end = .; 
 
 修改汇编
  ldr r0,=__bss_start

@@ -1,11 +1,11 @@
 2013/08/03
 
 framebuffer
-	vim /etc/grub.conf
-	在kernal的末尾添加 vga=0x317
-	将framebuffer文件拷贝到/下(非必须，好寻找)
-	重启，如果/etc/fb0存在 在配置成功
-	ctrl+alt+f5  进入命令界面  登录 －> 进入framebuffer －> ./main 出绿图，成功
+    vim /etc/grub.conf
+    在kernal的末尾添加 vga=0x317
+    将framebuffer文件拷贝到/下(非必须，好寻找)
+    重启，如果/etc/fb0存在 在配置成功
+    ctrl+alt+f5  进入命令界面  登录 －> 进入framebuffer －> ./main 出绿图，成功
 
-	cd /usr/include/linux/
-	vim fb.h
+    cd /usr/include/linux/
+    vim fb.h

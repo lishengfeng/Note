@@ -1,14 +1,14 @@
 2013/12/07
- 启动过程	
+ 启动过程   
      6410芯片 有个8k RAM ，硬件自动将NAND的0地址开始的8K加载运行，这部分要用来初始化 1. 时钟        2.  NAND控制器，内存控制器 3.将NAND的剩余bootload和内核加载到内存运行
  点亮一个等，
-	
-	CP15 协处理器 负责管理 在SVC模式下才能操作，通过 mcr/mrc 去指定操作哪个  C0~C15 
-	灯一边是VCC 阴级接6410的某个I/O口，给阴极一个低电频，灯就亮了
-	上电后要马上执行则放在NAND的0地址
+    
+    CP15 协处理器 负责管理 在SVC模式下才能操作，通过 mcr/mrc 去指定操作哪个  C0~C15 
+    灯一边是VCC 阴级接6410的某个I/O口，给阴极一个低电频，灯就亮了
+    上电后要马上执行则放在NAND的0地址
 
-	6410中间的1176 外叫外设, 控制外设都要操作它们的寄存器来实现需求，
-	看原理图操作灯
+    6410中间的1176 外叫外设, 控制外设都要操作它们的寄存器来实现需求，
+    看原理图操作灯
 [sa@dba schema]$ pwd
 /home/sa/arm/smdk6410/schema
 QT6410_coreboard.pdf 是指蓝板子部分   值钱
@@ -25,17 +25,17 @@ Xhi_CSn/CE_CF0/EINT23/GPM0   GP为统一，M为组，0为组下的标号
 /home/sa/arm/smdk6410/datasheet/6410      /*三星6410外设部分*/
 306页  GPIO
 308页 10.4 REGISTER DESCRIPTION   寄存器地址  命名可以错，地址不能有错 
-	找到 GPM*
-	10.5详细  -> 10.5.13  338页   GPMCON 功能
- 		标号 对应字节位置  引脚功能描述
-		GPMDAT  对应的引脚    
-		GPMPUD P->pull  U->UP D->DOWN (00不费电)
+    找到 GPM*
+    10.5详细  -> 10.5.13  338页   GPMCON 功能
+        标号 对应字节位置  引脚功能描述
+        GPMDAT  对应的引脚    
+        GPMPUD P->pull  U->UP D->DOWN (00不费电)
 
-	
+    
  反汇编  
-		  arm-linux-gcc text.c -o text  
-		  arm-linux-objdump -D text > txt
-		  vim txt
+          arm-linux-gcc text.c -o text  
+          arm-linux-objdump -D text > txt
+          vim txt
    运行C 必须先个初始化一个栈指针
 
  4G 内核1G ，用户3G ，所以每个进程4G，但是内核1G是公用的，所以用户所用地址不会在1G里，这1G是内核直接使用
@@ -43,7 +43,7 @@ Xhi_CSn/CE_CF0/EINT23/GPM0   GP为统一，M为组，0为组下的标号
 程序
 
 最后要ld-> objcopy变成2进制才能操作
-	
+    
 [sa@dba hardwareControl]$ touch start.S
 [sa@dba hardwareControl]$ touch led.c
 [sa@dba hardwareControl]$ touch delay.c
@@ -63,13 +63,13 @@ ELF := arm  //目标文件名称定义
 BIN := arm.bin //二进制文件名称定义
 OBJS := start.o main.o led.o delay.o  //链接，有顺序
 all:$(ELF)
-	$(OBJCOPY) $< -O binary /tftpboot/$(BIN) //大写o  
+    $(OBJCOPY) $< -O binary /tftpboot/$(BIN) //大写o  
 $(ELF):$(OBJS) //链接  ELF为中间值
-	$(LD) $^ -O $@ －Ttext 0   //$^是所有依赖文件,  $@是目标  , -Ttext 指定代码段起始地址 0
+    $(LD) $^ -O $@ －Ttext 0   //$^是所有依赖文件,  $@是目标  , -Ttext 指定代码段起始地址 0
 %.o:%.c  //.o依赖于.c  因为下面写了一步到.o所以不需要经过.s
-	$(CC) -c $< -o $@  //$< 第一个依赖   /*前面必须是TAB键,语法规则*/
+    $(CC) -c $< -o $@  //$< 第一个依赖   /*前面必须是TAB键,语法规则*/
 %.o:%.s //部分.o直接由由.s生成，所以需要这个OA
-	$(AS) $< -o $@
+    $(AS) $< -o $@
 clean:
         rm -rf $(OBJS) $(ELF)
 
@@ -89,16 +89,16 @@ _start:
 /home/sa/arm/smdk6410/datasheet/arm
 要告诉1176核走外设总线
 
-	协处理器指令　mcr(r->c) mrc(c->r)倒着传　数据传输　从Rn <-> Cn (CP15)
-	mcr P15,第一个操作数，Rn,Cn,Cm,第二个操作数
-	mrc P15,op-1,Rn,Cn,Cm,Op_2  //CP15 有C0-C15　每个Cn都有多个， 第一个操作数和Cm,第二操作数来据的操作哪个Cn 从手册查
+    协处理器指令　mcr(r->c) mrc(c->r)倒着传　数据传输　从Rn <-> Cn (CP15)
+    mcr P15,第一个操作数，Rn,Cn,Cm,第二个操作数
+    mrc P15,op-1,Rn,Cn,Cm,Op_2  //CP15 有C0-C15　每个Cn都有多个， 第一个操作数和Cm,第二操作数来据的操作哪个Cn 从手册查
 从1176jzfs手册查
-	
+    
 内存117页　寄存器第一条指定了高位的地址，从第一个开始　描述中ＳＦＲ特殊寄存器，用于控制硬件　/* 0x7000_000*/　(外设)
 
 (1176 ) System Control Coprocessor　169页协处理器
-	查找c15  3.2.49	c15, Peripheral Port Memory Remap Register 内核->外设 342页
-		orr r0,#0x13　/*10011  256MB*/　将size的五位赋上值
+    查找c15  3.2.49   c15, Peripheral Port Memory Remap Register 内核->外设 342页
+        orr r0,#0x13　/*10011  256MB*/　将size的五位赋上值
 
 栈得放高段 mov sp,#0x2000　满段下移　正好是8k的位置
 

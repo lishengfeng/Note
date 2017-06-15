@@ -11,7 +11,7 @@ AC_PCMDATA 写FIFO
 [sa@localhost arm]$ pwd
 /home/sa/arm
 [sa@localhost arm]$ du -sh Track1.wav 
-50M	Track1.wav
+50M Track1.wav
 
 20M == 20*1024*1024 =20971520
 

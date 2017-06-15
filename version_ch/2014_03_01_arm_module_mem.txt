@@ -245,8 +245,8 @@ int main()
 
 int mysyscall(int a,int b) //open
 {
-	int ret;
-	//swi加偏移
+    int ret;
+    //swi加偏移
 /**
 [sa@localhost asm]$ pwd
 /uplooking/linux-2.6.28_smdk6410/arch/arm/include/asm
@@ -255,23 +255,23 @@ int mysyscall(int a,int b) //open
 */
 //swi返回值放到r0
 
-	__asm__ __volatile__(
-		"mov r0,%1\n"
-		"mov r1,%2\n"
-		"swi #(361+0x900000)\n"
-		"mov %0,r0\n"
-		:"=&r"(ret)
-		:"r"(a),"r"(b)
-		:
-	);
-	return ret;
+    __asm__ __volatile__(
+        "mov r0,%1\n"
+        "mov r1,%2\n"
+        "swi #(361+0x900000)\n"
+        "mov %0,r0\n"
+        :"=&r"(ret)
+        :"r"(a),"r"(b)
+        :
+    );
+    return ret;
 }
 int main()
 {
-	int ret;
-	ret = mysyscall(10,17);
-	printf("ret %d\n",ret);
-	return 0;
+    int ret;
+    ret = mysyscall(10,17);
+    printf("ret %d\n",ret);
+    return 0;
 }
 ============================
 

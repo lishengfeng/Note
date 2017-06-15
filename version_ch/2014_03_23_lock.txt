@@ -38,7 +38,7 @@ preempt_enable();
 arch/arm/include/asm/atomic.h
 
 typedef struct{
-	int counter:
+    int counter:
 } atomic_t;
 vim -t atomic_t
 
@@ -48,9 +48,9 @@ atomic_inc(&a) ---> a++
 atomic_dec(&a) ---> a--
 atomic_add
 1:      xxxx
-	xxxx
-	"teq %1,#0\n"
-	"bne 1b"  //如果上条指令 %1==0 则 条到标记 1 , b是指before,
+    xxxx
+    "teq %1,#0\n"
+    "bne 1b"  //如果上条指令 %1==0 则 条到标记 1 , b是指before,
 //也可以是a after 可以有两个一样的标记
 其实原子变量加法也能打断，只是能重复再算,保证结果是正确的
 
@@ -61,7 +61,7 @@ arch/arm/include/asm/bitops.h
 
 set_bit(nr,p) nr指第几位,p指针 *p|=1<<nr /**nr可以大于32，会自己做处理 */
 clear_bit(nr,p)                *p&~(1<<nr)
-change_bit(nr,p)	       *p^1<<nr
+change_bit(nr,p)           *p^1<<nr
 test_and_set_bit(nr,p)         返回值为 该位修改前的值
 test_and_clear_bit(nr,p)
 test_and_change_bit(nr,p)

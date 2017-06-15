@@ -7,16 +7,16 @@
 5.pthread_cleanup_pop, pthread_cleanup_push - establish 6/cancellation handlers
 7.pthread_exit - thread termination
 8.make-> makefile   make filenam5e == gcc -o filename filename.c
-	vim Makefile或者 vim MAKEFILE 
+    vim Makefile或者 vim MAKEFILE 
 ========================
 hello:hello.c
-	gcc -o hello hello.c
+    gcc -o hello hello.c
 hello.i:hello.c
-	gcc -E hello.c -o hello.i
+    gcc -E hello.c -o hello.i
 hello.s:hello.c
-	gcc -S hello.c -o hello.s
+    gcc -S hello.c -o hello.s
 hello.o:hello.c
-	gcc -c hello.c -o hello.o
+    gcc -c hello.c -o hello.o
 CFLAGS=-lpthread
 ========================
 第一个为make后接的参数 ,第二个hello.c为所要用到的文件.

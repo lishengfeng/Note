@@ -123,106 +123,106 @@ vim Kconfig
 =======================
 /** 在复制该段代码时需要把所有注释删除 */
 config MY_WDT  会在make menuconfig中追加一个菜单
-	bool "select s3c6410 wdt"
-	default n   //n为没选 ,y为选中
-	help
-	If you select... //帮助说明
+    bool "select s3c6410 wdt"
+    default n   //n为没选 ,y为选中
+    help
+    If you select... //帮助说明
 
 config MY_TEST
-	tristate "select my_test"
-	default n
-	help
-	xxxx
+    tristate "select my_test"
+    default n
+    help
+    xxxx
 menu "S3C6410 test for Kconfig" //添加一个多级菜单
 
 config LED
-	bool "support for led"
-	default n
-	help
-	xxxxxxxxxxx
+    bool "support for led"
+    default n
+    help
+    xxxxxxxxxxx
 //多选一
 choice
-	prompt "Select lcd driver"
-	default LCD2
-	config LCD1
-		bool "3.5"
-		help 
-		xxxxxxxxxxxxxxxx	
-	config LCD2
-		bool "4.3"
-		help 
-		yyyyyyyyyyyyyyy
-	config LCD3
-		bool "7.0"
-		help 
-		zzzzzzzzzzzzzz
+    prompt "Select lcd driver"
+    default LCD2
+    config LCD1
+        bool "3.5"
+        help 
+        xxxxxxxxxxxxxxxx    
+    config LCD2
+        bool "4.3"
+        help 
+        yyyyyyyyyyyyyyy
+    config LCD3
+        bool "7.0"
+        help 
+        zzzzzzzzzzzzzz
 endchoice
 config IRQ
-	bool "support for irq"
-	default n
-	help
-	xxxxxxxxxxxxxxxxxxx
+    bool "support for irq"
+    default n
+    help
+    xxxxxxxxxxxxxxxxxxx
 config IRQ_VEC
-	bool "support for irq_vec"
-	default n
-	help 
-	dddddddddddddddddddddddd
+    bool "support for irq_vec"
+    default n
+    help 
+    dddddddddddddddddddddddd
 config ADC 
-	bool "support for adc"
-	default n
-	help 
-	aaaaaaaaaaaaaaaaaaaaaa
+    bool "support for adc"
+    default n
+    help 
+    aaaaaaaaaaaaaaaaaaaaaa
 config TIMER
-	bool "support for timer"
-	default n
-	depends on IRQ  //依赖于 IRQ,IRQ选了才出来
-	help
-	nnnnnnnnnnnnnnnnnnnnnnnnn
+    bool "support for timer"
+    default n
+    depends on IRQ  //依赖于 IRQ,IRQ选了才出来
+    help
+    nnnnnnnnnnnnnnnnnnnnnnnnn
 config TS
-	bool "support for ts"
-	default n
-	depends on ADC && IRQ
-	help
- 	bbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+    bool "support for ts"
+    default n
+    depends on ADC && IRQ
+    help
+    bbbbbbbbbbbbbbbbbbbbbbbbbbbbb
 config NETWORK
-	bool "support for irq_vec"
-	default n
-	depends on IRQ || IRQ_VEC
-	help 
-	dddddddddddddddddddddddd
+    bool "support for irq_vec"
+    default n
+    depends on IRQ || IRQ_VEC
+    help 
+    dddddddddddddddddddddddd
 config WDT_IRQ
-	bool "wdt_irq"
-	default n
-	help
-	kkkkkkkkkkkkkkkkkk
+    bool "wdt_irq"
+    default n
+    help
+    kkkkkkkkkkkkkkkkkk
 config WDT_RESET
-	bool "reset"
-	default n
-	depends on !WDT_IRQ //与wdt_irq互斥
-	help
-	kkkkkkkkkkkkkkkkkk
+    bool "reset"
+    default n
+    depends on !WDT_IRQ //与wdt_irq互斥
+    help
+    kkkkkkkkkkkkkkkkkk
 config AC97
-	bool "support for ac97"
-	default n
-	help
-	kkkkkkkkkkkkkkkkkk
+    bool "support for ac97"
+    default n
+    help
+    kkkkkkkkkkkkkkkkkk
 config WM9714
-	bool "support for wm9714"
-	default n
-	select AC97  //会强制选择AC97
-	help
-	kkkkkkkkkkkkkkkkkk
+    bool "support for wm9714"
+    default n
+    select AC97  //会强制选择AC97
+    help
+    kkkkkkkkkkkkkkkkkk
 if ADC
-	config BCD
-		bool "bcd"
-		default n
-		help
-		xxxxxxxxx
+    config BCD
+        bool "bcd"
+        default n
+        help
+        xxxxxxxxx
 endif
 config STRING_TEST
         string "string value"
-		help
-		kkkkkk
+        help
+        kkkkkk
 config INT_TEST
         int "int value"
         default 100

@@ -1,6 +1,6 @@
 2013/05/18
 汇编
-	1. gcc -S function.c
+    1. gcc -S function.c
 
 
         .file   "function.c"

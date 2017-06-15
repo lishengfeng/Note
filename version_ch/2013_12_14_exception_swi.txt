@@ -7,60 +7,60 @@ cpu 模式
  主动 在特权模式下通过修改cpsr可以切换模式
  被动 在一些电信号触发或者特殊指令执行时
 
-	54页  ARM_Architecture_Reference_Manual.pdf	/*后面的地址是发生该异常时去执行的地址，异常向量表*/
-		Undefined instructions 未定义异常
-		Software interrupt 软中断异常
-		Prefetch Abort()  预取异常
-		Data Abort 数据异常 段错误
-		IRQ  电信号异常
-		FIQ  电信号异常      
-	异常向量表 放置异常处理程序   55页 硬件过程
-	异常返回指令  ARM_Architecture_Reference_Manual.pdf 43页看寄存器
-		stmfd sp!,{r0-r12,lr} //将r0-r12 ->栈
-		ldmfd sp!,{r0-r12,pc}^ //出栈  其中^作用是 spsr->cpsr
+    54页  ARM_Architecture_Reference_Manual.pdf    /*后面的地址是发生该异常时去执行的地址，异常向量表*/
+        Undefined instructions 未定义异常
+        Software interrupt 软中断异常
+        Prefetch Abort()  预取异常
+        Data Abort 数据异常 段错误
+        IRQ  电信号异常
+        FIQ  电信号异常      
+    异常向量表 放置异常处理程序   55页 硬件过程
+    异常返回指令  ARM_Architecture_Reference_Manual.pdf 43页看寄存器
+        stmfd sp!,{r0-r12,lr} //将r0-r12 ->栈
+        ldmfd sp!,{r0-r12,pc}^ //出栈  其中^作用是 spsr->cpsr
 
-	发生异常之后进入异常模式,栈使用的是异常模式的栈(因为寄存器也变了)
+    发生异常之后进入异常模式,栈使用的是异常模式的栈(因为寄存器也变了)
 
-		subs r0,r0,#4 //目标不是pc s表示影响标志位
-		subs pc,r0,#4 //目标是pc s表示 spsr->cpsr即 cpsr=spsr  (system和user模式下没有spsr寄存器)
-		movs r0,#0 //表示影响标志位
-		movs pc,lr //pc=lr cpsr=spsr
+        subs r0,r0,#4 //目标不是pc s表示影响标志位
+        subs pc,r0,#4 //目标是pc s表示 spsr->cpsr即 cpsr=spsr  (system和user模式下没有spsr寄存器)
+        movs r0,#0 //表示影响标志位
+        movs pc,lr //pc=lr cpsr=spsr
 
 //异常处理
 1.异常向量表
-	向量表能够跳转到处理程序
-	处理程序 保护 处理 返回
+    向量表能够跳转到处理程序
+    处理程序 保护 处理 返回
 
-2.异常的栈在异常发生之前要准备好		
-	切换模式 2.1古老
-			mrs r0,cpsr
-			bic r0,#0x1f
-			orr r0,#0x1b
-			msr cpsr,r0   /*以上是切换到Und异常 */
+2.异常的栈在异常发生之前要准备好     
+    切换模式 2.1古老
+            mrs r0,cpsr
+            bic r0,#0x1f
+            orr r0,#0x1b
+            msr cpsr,r0   /*以上是切换到Und异常 */
 
-			mrs r0,cpsr
-			bic r0,#0x1f
-			orr r0,#0x1b
-			msr cpsr,r0   /*以上是切换到Und异常 */
-		2.2 V6版本后 cps /*得在SVC权限下，user下会段错误*/　　//arm11或以上版本可以使用
-			特权下可以切换模式
-			cps #0x13 切换到SVC
-			cps #0x1b 切换到und
-		   控制cpsr 的ＡＩＦ
-			cpsie a 使能data abort
-			cpsie i 使能IRQ异常
-			cpsie aif 使能data abort. irq. fiq
-			cpsie if 使能　irq.fiq
-			cpsid if 禁止　irq.fiq
-			cpsid i 禁止　IRQ
-			cpsie ai,#0x13 切换到SVC 同时使能data abort . irq
-			cpsid if,#0x1b　切换到und 同时禁止 irq.fiq
+            mrs r0,cpsr
+            bic r0,#0x1f
+            orr r0,#0x1b
+            msr cpsr,r0   /*以上是切换到Und异常 */
+        2.2 V6版本后 cps /*得在SVC权限下，user下会段错误*/　　//arm11或以上版本可以使用
+            特权下可以切换模式
+            cps #0x13 切换到SVC
+            cps #0x1b 切换到und
+           控制cpsr 的ＡＩＦ
+            cpsie a 使能data abort
+            cpsie i 使能IRQ异常
+            cpsie aif 使能data abort. irq. fiq
+            cpsie if 使能　irq.fiq
+            cpsid if 禁止　irq.fiq
+            cpsid i 禁止　IRQ
+            cpsie ai,#0x13 切换到SVC 同时使能data abort . irq
+            cpsid if,#0x1b　切换到und 同时禁止 irq.fiq
 3.异常触发
 
-	执行过的指令
-	正在执行的指令　
-	将要执行的指令   /*该条指令的地址被存在lr中*/
-	将要执行的指令＋４
+    执行过的指令
+    正在执行的指令　
+    将要执行的指令   /*该条指令的地址被存在lr中*/
+    将要执行的指令＋４
 
 1.vim start.S
 =================================
@@ -82,23 +82,23 @@ reset:
 
         mov sp,#0x2000   //这个的sp是SVC的，因为这之前不会有未定义异常，所以在这里初始化异常的栈
 
-	
-	mrs r0,cpsr  //取值
+    
+    mrs r0,cpsr  //取值
         bic r0,#0x1f //清零
         orr r0,#0x1b //切换到UND
         msr cpsr,r0  //赋值
-	
-	mov sp,#0x1500 //这是UND的sp,地址随便写，不要超过8k不要覆盖代码段
+    
+    mov sp,#0x1500 //这是UND的sp,地址随便写，不要超过8k不要覆盖代码段
 
-	mrs r0,cpsr //取值
+    mrs r0,cpsr //取值
         bic r0,#0x1f //清零
         orr r0,#0x13 //切换回SVC
         msr cpsr,r0 //赋值
 
         bl main
 und:
-	stmfd sp!,{r0-r12,lr}
-	mrs r0,cpsr  //这样r0就被当作第一个参数传给了do_und
+    stmfd sp!,{r0-r12,lr}
+    mrs r0,cpsr  //这样r0就被当作第一个参数传给了do_und
         bl do_und  
         ldmfd sp!,{r0-r12,pc}^  //得看稳定这个ps是否需要 -#4 有些指令有偏移
 
@@ -152,8 +152,8 @@ int main()
 
 同步异常
 异步异常　异常发生和当前执行的指令无关　IRQ FIQ
-	各种能发出中断信号的硬件连接中断控制器，控制器告诉cpu，cpu处理告诉中断控制器->再去通知对应的硬件->该硬件的这个中断信号的处理函数执行
-	IRQ默认ＶＥ是０所以发生该中断信号时跳到18 ARM1176　２２７页　ＶＥbit 0 reset value
+    各种能发出中断信号的硬件连接中断控制器，控制器告诉cpu，cpu处理告诉中断控制器->再去通知对应的硬件->该硬件的这个中断信号的处理函数执行
+    IRQ默认ＶＥ是０所以发生该中断信号时跳到18 ARM1176　２２７页　ＶＥbit 0 reset value
 
 作业
-	看看S3C6410 向量中断控制器409页
+    看看S3C6410 向量中断控制器409页

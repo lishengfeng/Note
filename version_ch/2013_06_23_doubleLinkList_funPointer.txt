@@ -3,28 +3,28 @@
 1.双链表
 
 2.可变长结构体:原理->每次malloc申请时的内存地址都是连续的,*char只占一个字符
-	a.栈区定义一个指针接收malloc申请的地址
-	b.堆区通过malloc申请需要的内存空间
+    a.栈区定义一个指针接收malloc申请的地址
+    b.堆区通过malloc申请需要的内存空间
 
-3.	void* 能接收所有类型,但是测不出大小
-	内存每次以四字节处理,所以一定是4的倍数,char[1]占四个字节，char[5]占八个字节
+3.  void* 能接收所有类型,但是测不出大小
+    内存每次以四字节处理,所以一定是4的倍数,char[1]占四个字节，char[5]占八个字节
 4.指针函数
-	函数名本身就是一个函数的首地址,函数名不可以改指向
-	函数也是有类型的,函数的类型,看头(参数和返回值  ),不看函数体
-	void fun1();
-	void fun2();
+    函数名本身就是一个函数的首地址,函数名不可以改指向
+    函数也是有类型的,函数的类型,看头(参数和返回值  ),不看函数体
+    void fun1();
+    void fun2();
 
-	void (*p)();  这就能指向 void funName()类型的函数
-	p1=fun1;
-	p1();//调用
-	p1=fun2;
-	p1();//
+    void (*p)();  这就能指向 void funName()类型的函数
+    p1=fun1;
+    p1();//调用
+    p1=fun2;
+    p1();//
 
-	作用:函数指针作为参数
+    作用:函数指针作为参数
 
-	int add(int a,int b);
-	int sub(int a,int b);
-	int Math(int a,int b,int (*p)(int,int))
-	{
-		return p(a,b);
-	}
+    int add(int a,int b);
+    int sub(int a,int b);
+    int Math(int a,int b,int (*p)(int,int))
+    {
+        return p(a,b);
+    }

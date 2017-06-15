@@ -1,109 +1,109 @@
 2013/04/14
-	ls /dev/sd*	查看硬盘设备信息
-	fdisk -l        列出硬盘信息(需要root权限)
-	df -h		查看挂载信息
-	du -h 目录  	显示显示目录明细大小 -s则只显示目录大小 -h humen readable
-	free -m		查看内存,如果Swap中used已经使用了,说明内存不够用了	   
-	top		查看cpu    按h 查看帮助  按1展开cpu,查看几核  
-	yum install vsftpd	linux 安全
-		/etc/vsftpd/vsftpd.conf	配置文件
-		man 5 vsftpd.conf
-		ls -ld /var/ftp/       默认地址
-	配置文件中
-	anonymous_enable=YES	来宾(匿名)
-	local_enable=YES	本地(用户名密码)
-	write_enable=YES	对所有用户
-	anno_upload_enalbe=YES
-	anon_mkdir_write_enable=YES
-	
-	FTP 
-		端口默认21
-		模式由客户决定
-		模式:	PASV
-				被动模式,客户发起,服务开启随机端口提供下载(不适用于ftp有防火墙,因为服务端入难出易,所以客户端无法提供具体是哪个端口)
-		    	PORT
-				主动模式,客户发起,客户开启并提供随机端口,服务回馈请求
-		ps aux | grep vsftpd
+    ls /dev/sd* 查看硬盘设备信息
+    fdisk -l        列出硬盘信息(需要root权限)
+    df -h       查看挂载信息
+    du -h 目录    显示显示目录明细大小 -s则只显示目录大小 -h humen readable
+    free -m     查看内存,如果Swap中used已经使用了,说明内存不够用了     
+    top     查看cpu    按h 查看帮助  按1展开cpu,查看几核  
+    yum install vsftpd  linux 安全
+        /etc/vsftpd/vsftpd.conf 配置文件
+        man 5 vsftpd.conf
+        ls -ld /var/ftp/       默认地址
+    配置文件中
+    anonymous_enable=YES    来宾(匿名)
+    local_enable=YES    本地(用户名密码)
+    write_enable=YES    对所有用户
+    anno_upload_enalbe=YES
+    anon_mkdir_write_enable=YES
+    
+    FTP 
+        端口默认21
+        模式由客户决定
+        模式: PASV
+                被动模式,客户发起,服务开启随机端口提供下载(不适用于ftp有防火墙,因为服务端入难出易,所以客户端无法提供具体是哪个端口)
+                PORT
+                主动模式,客户发起,客户开启并提供随机端口,服务回馈请求
+        ps aux | grep vsftpd
 
-		netstat -anpt     列出服务信息,-a all -n 除去多余信息don't resolve names,-p display PID/Program name for sockets -t tcp协议		
+        netstat -anpt     列出服务信息,-a all -n 除去多余信息don't resolve names,-p display PID/Program name for sockets -t tcp协议       
 
-		lftp -d 192.168.1.254	-d debug模式  进入后会显示过程
-		vim /etc/lftp.conf  设置配置文件
-			set ftp:passive-mode off  设置为主动模式(默认为被动模式)
-		
-		{which lftp
-		rpm -qf /usr/bin/lftp		
-		rpm -ql lftp/...}找到配置文件
+        lftp -d 192.168.1.254   -d debug模式  进入后会显示过程
+        vim /etc/lftp.conf  设置配置文件
+            set ftp:passive-mode off  设置为主动模式(默认为被动模式)
+        
+        {which lftp
+        rpm -qf /usr/bin/lftp       
+        rpm -ql lftp/...}找到配置文件
 
-		/var/log/xferlog   ftp 日志
+        /var/log/xferlog   ftp 日志
 
-		yum install wireshark wireshark-gnome 安装抓包
-			capturing option配置
+        yum install wireshark wireshark-gnome 安装抓包
+            capturing option配置
 
-	WEB
-		HTTP
-		端口默认为80
-		yum install httpd	安装查httpd超文本协议
-			/etc/httpd/conf/httpd.conf	配置文件地址
-			/var/www/			一般网站文件存放地址
-		
-		access_log	error_log  日志文件
-		/etc/init.d/httpd
-			restart           重起http
-		netstat -anpt | grep httpd  列出http服务信息
+    WEB
+        HTTP
+        端口默认为80
+        yum install httpd   安装查httpd超文本协议
+            /etc/httpd/conf/httpd.conf  配置文件地址
+            /var/www/           一般网站文件存放地址
+        
+        access_log  error_log  日志文件
+        /etc/init.d/httpd
+            restart           重起http
+        netstat -anpt | grep httpd  列出http服务信息
 
-		yum search ssl
-			yum install mod_ssl	可以看到443端口,加密传输,(80端口则是明文)
+        yum search ssl
+            yum install mod_ssl 可以看到443端口,加密传输,(80端口则是明文)
 
-		rpm -qa apr  查找apach 提供的接口
+        rpm -qa apr  查找apach 提供的接口
 
-		cd /var/run/   目录下查看当前进程信息,从而给特定id发送消息作一些处理
-		
-		/etc/httpd/conf 配置文件
-			<IfModule prefork.c>关于线程池的一般信息
-			</IfModule>
+        cd /var/run/   目录下查看当前进程信息,从而给特定id发送消息作一些处理
+        
+        /etc/httpd/conf 配置文件
+            <IfModule prefork.c>关于线程池的一般信息
+            </IfModule>
 
-		yum search http
-			yum install httpd-manual
-		火狐查看file:///var/www/manual/index.html  手册
+        yum search http
+            yum install httpd-manual
+        火狐查看file:///var/www/manual/index.html  手册
 
-	NFS
-		rpm -qa nfs
+    NFS
+        rpm -qa nfs
 
-		yum install nfs.... nfs.... 默认已经安装
+        yum install nfs.... nfs.... 默认已经安装
 
-		/etc/exports 共享文件, 第一为目录,第二个为可访问者(权限)(ro只读rw可读可写) /*权限有共享权限和目录权限*/
-			===============================================
-				/var/ftp/	*(rw)
-				/nfs		*(rw,no_root_squash)  /*no_root_squash 一般不打开,root用户权限不转换*/
-			===============================================
-		/var/log/messages  日志文件
-	
-		/etc/init.d/nfs restart
-		/etc/init.d/portmap restart    /*手册当中有写，依赖于这个portmap*/ /*需要用到端口,而portmap提供这些服务*/
-	
-	CIFS(samba) (Windows网上邻居) 
-		yum install samba
-		/etc/samba/smb.conf  配置文件
-		/var/log/samba/smbd.log
-		/etc/init.d/smb restart
-		smbpasswd -a blues      输入两次密码 给samba创建一个用户密码,用户为系统有的用户  /*通过直接访问机器来共享文件*/
-		smbclient -L 192.168.1.254 --user blues
+        /etc/exports 共享文件, 第一为目录,第二个为可访问者(权限)(ro只读rw可读可写) /*权限有共享权限和目录权限*/
+            ===============================================
+                /var/ftp/   *(rw)
+                /nfs        *(rw,no_root_squash)  /*no_root_squash 一般不打开,root用户权限不转换*/
+            ===============================================
+        /var/log/messages  日志文件
+    
+        /etc/init.d/nfs restart
+        /etc/init.d/portmap restart    /*手册当中有写，依赖于这个portmap*/ /*需要用到端口,而portmap提供这些服务*/
+    
+    CIFS(samba) (Windows网上邻居) 
+        yum install samba
+        /etc/samba/smb.conf  配置文件
+        /var/log/samba/smbd.log
+        /etc/init.d/smb restart
+        smbpasswd -a blues      输入两次密码 给samba创建一个用户密码,用户为系统有的用户  /*通过直接访问机器来共享文件*/
+        smbclient -L 192.168.1.254 --user blues
 
-	tftp(简单传输协议)
-		yum search tftp
-		yum install tftp.i386 tftp-server
-		etc/xinetd.d/tftp 	配置文件
-			/tftpboot/    存放tfpt共享文件的位置
-		chkconfig tftp on	启动
-		/etc/init.d/xinetd restart	重启服务 (xinetde代理告诉tftp用哪个命令)
+    tftp(简单传输协议)
+        yum search tftp
+        yum install tftp.i386 tftp-server
+        etc/xinetd.d/tftp   配置文件
+            /tftpboot/    存放tfpt共享文件的位置
+        chkconfig tftp on   启动
+        /etc/init.d/xinetd restart  重启服务 (xinetde代理告诉tftp用哪个命令)
 
-		tftp 192.168.1.254
-		help
+        tftp 192.168.1.254
+        help
 
 
-			
-						
-		 
-		
-		
+            
+                        
+         
+        
+        

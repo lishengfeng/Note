@@ -37,12 +37,12 @@ tar xvf arm-linux-gcc.tar.bz2 -C /opt/
 路径 /opt/4.3.2/bin 下 有各种命令   (4.3.2为该桥的编译gcc版本，和本地gcc没有关系)
 //改变环境变量地址   都在末尾加
 /root/.bashrc  只有root能使用 （普通用户也有）
-/etc/bashrc	    每开一次终端会读取这个文件
+/etc/bashrc     每开一次终端会读取这个文件
 /etc/profile    系统启动时会启动一次，或者用source /etc/profile
 
 例如: vim /etc/bashrc 
-	末尾 export PATH=$PATH:/opt/4.3.2/bin
-	通过    . /etc/bashrc 重新读取  点 空格 /etc/bashrc
+    末尾 export PATH=$PATH:/opt/4.3.2/bin
+    通过    . /etc/bashrc 重新读取  点 空格 /etc/bashrc
 
 //有了交叉编译工具才能边bootloader 和 内核
 [root@dba src]# tar xvf u-boot-1.1.6.tar.bz2 -C /opt/
@@ -167,9 +167,9 @@ CROSS_COMPILE   := arm-linux-
 表明了存放的位置
 
 第一阶段 产生 zImage
-	arch/arm/boot/zImage
+    arch/arm/boot/zImage
 第二阶段 编译module 
-	在开发阶段开发板驱动可以写为模块，在嵌入式系统中最终要将模块编译到zImage内
+    在开发阶段开发板驱动可以写为模块，在嵌入式系统中最终要将模块编译到zImage内
 
 //因为图片显式很大的解决办法
 [root@dba linux-2.6.28_smdk6410]# make menuconfig

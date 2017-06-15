@@ -55,10 +55,10 @@ vim -t input_event 事件结构体
 include/linux/input.h
 
 struct input_event{
-	struct timeval time //上报时间
-	__u16 type; //鼠标相对事件(根据上次坐标),绝对事件(点击坐标),同步事件
-	__u16 code; //事件码  x,y
-	__s32 value; //值
+    struct timeval time //上报时间
+    __u16 type; //鼠标相对事件(根据上次坐标),绝对事件(点击坐标),同步事件
+    __u16 code; //事件码  x,y
+    __s32 value; //值
 }
 
 用户态下标准头文件路径/usr/include/linux/xx.h (可能是部分，不确定)

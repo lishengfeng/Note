@@ -1,14 +1,14 @@
 2013/12/08
  时钟入口，由引脚控制,
  用cpu和arm核相同源(用一个锁相簧产生)则时钟是同步的，用不同源则时钟是异步的
-	
-	如果内存是同步的话，最好时钟也用同步的,否则需要等到同步才能执行
+    
+    如果内存是同步的话，最好时钟也用同步的,否则需要等到同步才能执行
  原理图   122页 CLOCK ARCHITECTURE
  先将后面的频率配好，在将开始部分频率切换到高频
-	137，142页  锁相簧的工作模式   一般lock time 改成最大值保证倍频后能稳定工  锁相簧内存地址
+    137，142页  锁相簧的工作模式   一般lock time 改成最大值保证倍频后能稳定工  锁相簧内存地址
    Fin是12M ，在我们的6410是固定的
-	126页看输出范围
-	初始化硬件，所有都打开 150页
+    126页看输出范围
+    初始化硬件，所有都打开 150页
 
  139页找地址，声明头文件
 －－－－－－－－－－－－－－－－－－－－－－－
@@ -65,10 +65,10 @@ int main()
         led_init();
         while(1){
                 for(i=0;i<4;i++){
-                	led_on(i);
-                	delay(5);
-                	led_off(i);
-                	delay(5);
+                    led_on(i);
+                    delay(5);
+                    led_off(i);
+                    delay(5);
                 }
         }
 }
@@ -84,10 +84,10 @@ OBJS := start.o main.o led.o delay.o clock.o
 
 串口
   DB9用的比较普遍              5 线为接地
-	2 ,3   为数据线         TXD 发送端，RXD接收端  所以只要三条线就够了
- 	 31 UART  1080页
+    2 ,3   为数据线         TXD 发送端，RXD接收端  所以只要三条线就够了
+     31 UART  1080页
 通过引脚控制UART
-	原理图 mainboard 7页 
+    原理图 mainboard 7页 
         原理图   X_uRXD0/GPA0   4页         
          X_uTXD0/GPA1
 
@@ -108,7 +108,7 @@ vim 需要在前面加一样的东西 －－>  ctrl+v ,将需要加的部分选�
 #define GPACON     *(volatile unsigned long*)0x7F008000      //配置引脚 
 #define ULCON0     *(volatile unsigned long*)0x7F005000      //线控制器   传输 /*Parity Mode(校验模式) */
 #define UCON0      *(volatile unsigned long*)0x7F005004      // 控制器  控制工作模式
-#define UFCON0     *(volatile unsigned long*)0x7F005008 		 //FIFO控制器 64位缓存
+#define UFCON0     *(volatile unsigned long*)0x7F005008          //FIFO控制器 64位缓存
 #define UMCON0     *(volatile unsigned long*)0x7F00500C      //调制解调器 控制器
 #define UTRSTAT0   *(volatile unsigned long*)0x7F005010      //发送的状态
 #define UERSTAT0   *(volatile unsigned long*)0x7F005014 
@@ -116,7 +116,7 @@ vim 需要在前面加一样的东西 －－>  ctrl+v ,将需要加的部分选�
 #define UMSTAT0    *(volatile unsigned long*)0x7F00501C 
 #define UTXH0      *(volatile unsigned long*)0x7F005020     //发送的值
 #define URXH0      *(volatile unsigned long*)0x7F005024 
-#define UBRDIV0    *(volatile unsigned long*)0x7F005028 	   //波特率要用的参数部分的整数部分
+#define UBRDIV0    *(volatile unsigned long*)0x7F005028        //波特率要用的参数部分的整数部分
 #define UDIVSLOT0  *(volatile unsigned long*)0x7F00502C     //波特率要用的参数部分的小数部分经过转变而得到
 －－－－－－－－－－－－－－－－－
 [root@dba hardwareControl]# cp -r clock/ uart

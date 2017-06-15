@@ -18,10 +18,10 @@ ip校验不用切换大小端，其他超过一个字节的在放数据时都要
 所以用全局变量或者自己实现memcpy //参考memcpy
 void *memcpy(void *dest, const void *src, size_t n);
 {
-	//判断空指针
-	for(int i=0;i<n;i++){
-		*dest++=*src++;
-	}
+    //判断空指针
+    for(int i=0;i<n;i++){
+        *dest++=*src++;
+    }
 }
 全局是数据段里，已经写死了
 发消息,vim main.c
@@ -44,7 +44,7 @@ audio
  ADC将虚拟信号转换成数字信号，放到内存，再放到固态存储
 测试数据,采样率44100
 mp3->库(libmad)/硬件解码->1.放到特定内存
-			  2.open
+              2.open
 dev/dsp(ictl配置)->linux内核->驱动->声卡(将特定内存解码的数字写道声卡，出声音)
 
 WM9713/9714
@@ -58,9 +58,9 @@ HPL左声道
 HPR右声道
 //我们板子用了加大音量的接线SPKL/SPKR
 core.pdf 4页
-	GPD
+    GPD
 6410 1140页35 AC97 CONTROLLER
-	1150 状态切换,到active,写数据就播放,LP(low power)关闭
+    1150 状态切换,到active,写数据就播放,LP(low power)关闭
 
 1152
 AC_GLBCTRL 

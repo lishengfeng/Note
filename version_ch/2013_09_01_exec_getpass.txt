@@ -1,10 +1,10 @@
 2013/09/01
-	
-	usleep - sleep some number of microseconds
-	man 3 exec
-		execl, execlp, execle, execv, execvp - execute a file
-			The  exec()  family  of functions replaces the current process image
-       			with a new process image.
-	setuid - set user identity
-	getpass - get a password
+    
+    usleep - sleep some number of microseconds
+    man 3 exec
+        execl, execlp, execle, execv, execvp - execute a file
+            The  exec()  family  of functions replaces the current process image
+                with a new process image.
+    setuid - set user identity
+    getpass - get a password
 

@@ -29,8 +29,8 @@ linux内核
  如果找的 不对 再在vim命令里 cstag + 函数名继续找
 
  1.申请设备号 register_chrdev_region 先有设备号,然后注册
-	          cat /proc/devices 记录哪些设备号被占用了
- 	      alloc_chrdev_region 动态申请
+              cat /proc/devices 记录哪些设备号被占用了
+          alloc_chrdev_region 动态申请
  2.归还设备号 unregister_chrdev_region
 /** 编译的时候 内核和配置必须是一致的 */
 ===============================================
@@ -150,8 +150,8 @@ ioread32 内核提供的读外设
 iowrite32内核提供的写外设
 
 mknod led c 251 0  根据设备号来匹配才能找到
-	要创建一个节点  /** 真正节点应该在/dev/
-	节点--->VFS--->ops ---> 内核ops
+    要创建一个节点  /** 真正节点应该在/dev/
+    节点--->VFS--->ops ---> 内核ops
 ./led_app
 
 补充: vim配置

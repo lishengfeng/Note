@@ -14,7 +14,7 @@
        media(多媒体设备)
        mtd(半导体单元)
        usb(USB主控制器)
-    sound  声卡驱动	 
+    sound  声卡驱动  
   uname -a 显示全部 -r 显示版本
 
   Makefile 

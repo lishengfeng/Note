@@ -49,7 +49,7 @@
     在中断处理函数结束的时候执行软中断，或者内核会定时的扫描软中断(如果有就执行)
     在内核中用一个数组表示软中断，最多能有32个软中断(因为数组连续最长的是32)
     头文件中的enum中的为内核已经使用了, 但是可以添加 必须在RCU_SOFTIRQ之前
-	1.1数组添加软中断, 让 pending挂起
+    1.1数组添加软中断, 让 pending挂起
  [sa@localhost linux]$ pwd
 /uplooking/linux-2.6.28_smdk6410/include/linux
 [sa@localhost linux]$ vim interrupt.h 

@@ -1,28 +1,28 @@
 2013/08/25
 
-	1.mkstemp - create a unique temporary file
-	2.tmpfile - create a temporary file
-	3.fgetpos, fseek, fsetpos, ftell, rewind - reposition a stream
-	4.gdb   C debug
-	5.env   show global var
-	6. cp /etc/skel /home/sa   复制初始home目录
-	 	/etc/shadow 存放密码  密码中若开头为!!则没设置密码
-		
-	7.crypt password and data encryption
-	8.getpwnam,  getpwnam_r,  getpwuid,  getpwuid_r  - get password file entry
-	9.getpwent, setpwent, endpwent - get password file entry
-	10.shadow, getspnam - encrypted password file routines
-	11.getgrent, setgrent, endgrent - get group file entry
-	12.crypt - password and data encryption
-		in the salt, followed by 22 bytes  chosen  from the set [a–zA–Z0–9./]. 
-		Programs using this function must be linked with -lcrypt.
-	13.man 2 time   get time in seconds
-	14.gettimeofday, settimeofday - get / set time
-	15.asctime,  ctime, * gmtime *, * localtime *,  mktime, asctime_r, ctime_r,
-       		gmtime_r, localtime_r - transform date  and  time  to  broken-down
-      		 time or ASCII
-		
-	16.strftime - format date and time
+    1.mkstemp - create a unique temporary file
+    2.tmpfile - create a temporary file
+    3.fgetpos, fseek, fsetpos, ftell, rewind - reposition a stream
+    4.gdb   C debug
+    5.env   show global var
+    6. cp /etc/skel /home/sa   复制初始home目录
+        /etc/shadow 存放密码  密码中若开头为!!则没设置密码
+        
+    7.crypt password and data encryption
+    8.getpwnam,  getpwnam_r,  getpwuid,  getpwuid_r  - get password file entry
+    9.getpwent, setpwent, endpwent - get password file entry
+    10.shadow, getspnam - encrypted password file routines
+    11.getgrent, setgrent, endgrent - get group file entry
+    12.crypt - password and data encryption
+        in the salt, followed by 22 bytes  chosen  from the set [a–zA–Z0–9./]. 
+        Programs using this function must be linked with -lcrypt.
+    13.man 2 time   get time in seconds
+    14.gettimeofday, settimeofday - get / set time
+    15.asctime,  ctime, * gmtime *, * localtime *,  mktime, asctime_r, ctime_r,
+            gmtime_r, localtime_r - transform date  and  time  to  broken-down
+             time or ASCII
+        
+    16.strftime - format date and time
 
 
 
