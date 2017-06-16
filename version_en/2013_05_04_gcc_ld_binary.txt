@@ -1,15 +1,33 @@
 2013/05/04
 
-1.预处理 cpp   生成文本
-2.编译 gcc    生成 .i
-3.汇编 gas    生成 .o
-4.链接 ld     生成 a.out
+gcc - GNU project C and C++ compiler
+When you invoke GCC, it normally does preprocessing, compilation, assembly and linking.  The "overall options" allow you to stop this process at an intermediate stage.  For example, the -c option says not to run the linker.  Then the output consists of object files output by the assembler.
 
-gcc -E 停留在预处理
-gcc -S 停留在编译
-gcc -c 停留在汇编
+-E will stop after preprocessing and generate some files
+-S will stop after compilation and generate .i files
+-c will stop after assembly and generate .o files
 
-1.置位  a | (1<<2)
-2.清零  a & ~(1<<2)
-3.取位  !!a & (1<<2)
-4.反转  a ^ (1<<2)
+Without any stop, gcc will generate .out files
+
+Setting a bit
+Use the bitwise OR operator (|) to set a bit.
+    number |= 1<<x;
+That will set bit x.
+
+Clearing a bit
+Use the bitwise AND operator (&) to clear a bit.
+    number &= ~(1<<x);
+That will clear bit x. You must invert the bit string with the bitwise NOT operator (~), then AND it.
+
+Toggling a bit
+The XOR operator (^) can be used to toggle a bit - XOR means true when inputs differ(one is true, the other is false)
+    number ^= 1<<x;
+That will toggle bit x.
+
+Checking a bit
+To check a bit, shift the number x to the right, then bitwise AND it:
+    bit = (number >> x) & 1;
+That will put the value of bit x into the variable bit.
+
+Changing the nth bit to x(0 or 1)
+    number = number & ~(1 << n) | (x << n);
