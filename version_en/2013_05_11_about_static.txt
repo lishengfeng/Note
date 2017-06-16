@@ -1,6 +1,65 @@
 2013/05/11
 
+Local variables vs. Global variables
+    A local variable is a variable that is declared inside a function. A global variable is a variable that is declared outside all functions. A local variable can only be used in the function where it is declared. A global variable can be used in all functions.
+    Variables should always have the smaller scope possible. The argument behind that is that every time you increase the scope you have more code that potentially modifies the variable, thus more complexity is induced in the solution.
+    It is thus clear that avoiding using global variables is preferred if the design and implementation naturally allows that. Due to this I prefer not using global variables unless they are really needed.
+    I can not agree with the "never" statement either, Like any other concept global variables are a tool that should be used when needed. I would rather use global variables than use some artificial constructs (like passing pointers around) which would only mask the real intent. Good examples where global variables are used are singleton pattern implementations or register access in embedded systems.
+    On how to actually detect excessive usages of global variables: inspection, inspection, inspection. Whenever I see a global variable I have to ask myself: Is that REALLY needed at a global scope?
 
-1.尽量不使用全局变量      多处能修改，不安全，易出错
-2.用的话加static    只让自身.c能看，安全(但是(且只有)导入头文件也可以,头文件是宏替换)
-3.显示初始化                     不让多重初始化，能发现如果同名且为全局变量,则会提示
+In C, functions are global by default.
+
+Static in C programming 
+
+    (1).A static variable inside a function keeps its value between invocations.
+    (2).A static global variable or a function is "seen" only in the file it's declared in
+
+    (1) is the more foreign topic if you're a newbie, so here's an example:
+
+    #include <stdio.h>
+
+    void foo()
+    {
+        int a = 10;
+        static int sa = 10;
+
+        a += 5;
+        sa += 5;
+
+        printf("a = %d, sa = %d\n", a, sa);
+    }
+
+
+    int main()
+    {
+        int i;
+
+        for (i = 0; i < 10; ++i)
+                    foo();
+    }
+    This prints:
+
+    a = 15, sa = 15
+    a = 15, sa = 20
+    a = 15, sa = 25
+    a = 15, sa = 30
+    a = 15, sa = 35
+    a = 15, sa = 40
+    a = 15, sa = 45
+    a = 15, sa = 50
+    a = 15, sa = 55
+    a = 15, sa = 60
+    This is useful for cases where a function needs to keep some state between invocations, and you don't want to use global variables. Beware, however, this feature should be used very sparingly - it makes your code not thread-safe and harder to understand.
+
+    (2) Is used widely as an "access control" feature. If you have a .c file implementing some functionality, it usually exposes only a few "public" functions to users. The rest of its functions should be made static, so that the user won't be able to access them. This is encapsulation, a good practice.
+
+Try to declare a global variable implicitly cause declaring the same variable with different values won't work. By this way, you can avoid use the global variable with the wrong value set by other file.
+e.g.
+int a;int a;int a;int a=10 is fine.
+int a=5;int a=10; will turns out a compilation error.
+
+What is meant by implicit and explicit in programming?
+Implicit:
+Initialising global variables without any value. When we compile this program the compiler will "implicitly" intialise them with "Default" valuea.
+Explicit:
+When we declare and initialise any variable at the same time. Then it's called "Explicitly" initializing variable with some value.
