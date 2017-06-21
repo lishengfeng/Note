@@ -8,6 +8,9 @@ When you invoke GCC, it normally does preprocessing, compilation, assembly and l
 -c will stop after assembly and generate .o files
 
 Without any stop, gcc will generate .out files
+e.g.
+    gcc main.c - will generate a.out
+    gcc main.c -o main - will generate an executable 'mail' file
 
 Setting a bit
 Use the bitwise OR operator (|) to set a bit.
