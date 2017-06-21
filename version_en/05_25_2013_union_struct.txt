@@ -1,16 +1,82 @@
 02013/05/25
 
-(*p).struct.a <=> p-> struct.a
+C arrow operator - used for accessing members of structure using pointer variable
 
-struct {} x ((packed))；紧缩模式,每个数据间无任何填充
+struct student          |   struct student
+{                       |   {
+    char name[20],      |       char name[20],
+    int roll;           |       int roll;
+}std;                   |   }*ptr;
 
-union 和 struct 用法一样，意义不同
+Access Structure Member
+std.name  |  ptr->name
+std.roll  |  ptr->roll
 
-struct 每个成员都是独立的
-union 修改其中一个成员其他成员也改变，用的是同一个地址  有点类似于多态，可以根据不同的情况用里面不同的类型的值
-union  /* sizeof(union foo) 长度大于等于union中最大的类型长度 */
+Program:
+-------------------------------------------------
+#include<stdio.h>
+#include<malloc.h>
 
-malloc(sizeof(int)*10) 函数 申请一个内存 以字节为单位
- 位于stdlib.h
+struct emp {
+   int eid;
+   char name[10];
+}*ptr;
 
+int main() {
+   int i;
 
+   printf("Enter the Employee Details : ");
+   ptr = (struct emp *) malloc(sizeof(struct emp));
+
+   printf("\nEnter the Employee ID : ");
+   scanf("%d", &ptr->eid);
+   printf("\nEnter the Employee Name : ");
+   scanf("%s", ptr->name);
+
+   printf("\nEmployee Details are : ");
+   printf("\nRoll Number : %d", ptr->eid);
+   printf("\nEmployee Name : %s", ptr->name);
+
+   return (0);
+}
+-------------------------------------------------
+
+struct test
+{
+    int a;
+    int b;
+} __attribute__((__packed__))
+The packed attribute means "Do not insert paddings between members"
+Default:
++---------+---------+
+| m1 |~~~~|   m2    |
++---------+---------+
+Packed
++---------+---------+
+| m1 |   m2    |~~~~
++---------+---------+
+
+Difference between union and struct:
+union - Only supposed to use one of the elements, because they're all stored at the same spot. This makes it useful when you want to store something that could be one of several types.
+struct- Has a separate memory location for each of its elements and they all can be used at once
+e.g.
+union foo {
+  int a;   // can't use both a and b at once
+  char b;
+} foo;
+union foo x;
+x.a = 0xDEADBEEF;
+x.b = 0x22;
+printf("%x, %x\n", x.a, x.b);
+prints
+deadbe22, 22
+You can clearly see where the 0x22 overwrote the 0xEF.
+
+So sizeof(union foo) will give you the largest size of the member.
+
+Allocate a requested memory and returns a pointer to it
+Parameters:
+    size - This is the size of the memory block, in bytes.
+
+#include <stdlib.h>
+malloc(sizeof(int)*10)
