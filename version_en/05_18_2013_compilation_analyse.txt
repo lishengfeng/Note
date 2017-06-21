@@ -1,18 +1,41 @@
 2013/05/18
-汇编
-    1. gcc -S function.c
+Link: https://www.youtube.com/watch?v=ViNnfoE56V8&gl=US
+CPU 
+Bit 0|1
+Nibble - 4bit
+Byte   - 8bit
+Word   - 32 bit - 4Byte
 
+Registers & CPSR
+Register:
+R0 R1 R2 R3 R4 R5 R6 R7 R8 R9 R10 R11 R12 SP LR PC - hold a word each
+-----------------------------------------
+                 ^                        ^  ^  ^
+                 |                        |  |  \-- Program Counter, to store the address so the next construction to execute(track where your program is)
+                 |                        |  \----- Link Register, to store the return address from a subroutine
+                 |                        \-------- Stack Pointer. to tell how high the stack data is.
+                 \--------------------------------- Available to you. To do some very specials things
 
-        .file   "function.c"
-        .text
-.globl add
-        .type   add, @function
-add:
-        pushl   %ebp
-        movl    %esp, %ebp
-        subl    $16, %esp
+CPSR
+31 30 29 28 27-8      7-6 5 4-0
+N  Z  C  V  Not Used  IF  T MODE
+
+assemble language
+Explain assemble language code mean
+Link: http://resources.infosecinstitute.com/hello-world-c-assembly-object-file-and-executable/#gref
+
+    gcc -S function.c
+--------------------------------------------------
+        .file   "function.c"            - original source
+        .text                           - section which is used for the code  of the program
+.globl add                              - globally visible
+        .type   add, @function          - add function
+add:                                    - From add: label till the ret instruction is the actual code of the program
+        pushl   %ebp                    -(rbp for 64bit, ebp for 32bit) first initializes the stack by pushing the value of the regester to the stack(the return position) (%* means regester)
+        movl    %esp, %ebp              -(movq for 64bit, movl for 32 bit) Move the pointer of register ESP to EBP.
+        subl    $16, %esp               -Subtract 4 unit - move the pointer down 4 unit. 1 unit = 4 Byte. $16 means 16 Bytes.
         movl    12(%ebp), %eax
-        addl    8(%ebp), %eax
+        addl    8(%ebp), %eax           -Add 2 unit - move the pointer of EBP up 2 unit, then set the value of pointer to EAX
         movl    %eax, -4(%ebp)
         movl    -4(%ebp), %eax
         leave
@@ -21,46 +44,49 @@ add:
 .globl foo
         .type   foo, @function
 foo:
-        pushl   %ebp
+        pushl   %ebp                    -Each function will push this to make it possible to return to the caller function
         movl    %esp, %ebp
         subl    $24, %esp
-        movl    $32167, 4(%esp)
+        movl    $32167, 4(%esp)         -Set value 32167 to the position that is upper ESP 1 unit. (the value of in regester ESP doesn't change)
         movl    $1234, (%esp)
-        call    add
+        call    add                     -call function add
         movl    %eax, -4(%ebp)
         movl    $56789, %eax
         leave
-        ret
-        .size   foo, .-foo
-        .ident  "GCC: (GNU) 4.1.2 20080704 (Red Hat 4.1.2-52)"
+        ret                             -Move to the top of the stack
+        .size   foo, .-foo              -Set the size of the main function.
+        .ident  "GCC: (GNU) 4.1.2 20080704 (Red Hat 4.1.2-52)"     - Information about the compiler which was used to compile the executable
         .section        .note.GNU-stack,"",@progbits
+--------------------------------------------------
 
-实际函数段为pushl -> ret   
-%* 都是寄存器         ...如 %eax 
-系统指针  负数向下移,  正数向上移
-首先压栈一个返回地址，然后下移pushl %ebp 栈指针 , movl %esp,%ebp  将%esp 真指针移动到　％ebp位置!
-sub为减,　　$24, %esp  esp％ 下移六位.  以4为一个单位.
-movl $32167,4(%esp) 在 ％esp上端一位 赋值 32167， %esp自身值不变
+Pointers - Access the memory and manipulate the address
 
-* 每次调用一个函数都会先压栈一个返回地址以用于返回调用函数;
+If you have a variable "var" in your program, $var will give you its address in the memory, where & is commonly called the reference operator.
+    printf("Value: %d\n", var);
+    printf("Address: %u\n", $var);
 
-指针
+Declaration of Pointer
+    data_type* pinter_variable_name
+    int* p;
 
-＆取地址, *取该地址的值
-普通指针可以加减整数,函数指针因为不知道大小，不可以做指针计算
-普通指针可以相减来算指针间的 个数，但不可相加
+Likewise, there is another operator that gets you the value from the address, it is called a dereference operator(*). Note:The * sign when declaring a pointer is not a dereference operator. It is just a similar notation that creates a pointer
+    int c=22;
+    int* pc = &c;
+    printf("Address of pointer pc:%u\n", pc);
+    printf("Content of pointer pc:%d\n", *pc);
 
- 数组
-arr <=> &arr[0]
-所以传数组能改变数组本身.
-如果传数组中的某个值则只是值传递 
+Subtracting two pointers gives a logically explainable result - the offset in memory between two pointers. Similarly, you can subtract or add an integral number to/from a pointer, which means "move the pointer up or down". Adding a pointer to a pointer is something which is hard to explain. So adding two pointers is forbidden or meaningless
 
-char *a = "abcd"  则a的值可能无法在改变，因为不确定该字符串的地址里的值是否有权限操作；
-char a[5]="abcd" 则可以改变字符串中某个字符的值，因为数组就是分配一个有权限的空间给程序员。
+As function pointer is a random value, arithmetic of function pointer is meaningless.
 
-strcpy 复制字符串 
-strcat 连接字符串
-strcmp 比较字符串
+Array
+An array variable "arr" is the same with &arr[0] (the first position of the array)
+In C arrays are passed as a pointer to the first element. They are the only element that is not really passed by value (the pointer is passed by value, but the array is not copied). That allows the called function to modify the contents.
+However, passing the element in an array is not a reference pass.
 
+char *s = "abcd" - will place "abcd" in the read-only parts of the memory and making s a pointer to that, making any writing operation on this memory illegal. Whild doing:
+char s[5]="abcd" - puts the literal string in read-only memory and copies the string to newly allocated memory on the stack. Thus making s[0]='J';legal.
 
-
+strcpy, strncpy - copy a string
+strcat, strncat - concatenate two strings
+strcmp, strncmp - compare two strings
