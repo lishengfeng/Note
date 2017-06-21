@@ -1,33 +1,88 @@
 2013/05/26
 
-位字段（位域）
+1 int = 4 bytes
+C - Bit Fields
 
-不同机器的位序不一致
-
-必须和结构体一起用
+Your default alignment of a struct is probably 4 byte.
 
 struct {
-    unsigned int a : 1;
-    unsigned int b : 2;
-    unsigned int c : 1;
+   unsigned int widthValidated;
+   unsigned int heightValidated;
+} status;
+two integers is more than 4 bytes. So this strcuture require 8 bytes of memory space
+
+struct {
+   unsigned int widthValidated : 1;
+   unsigned int heightValidated : 1;
+} status;
+
+The above strcture requires 4 bytes of memory space for status variable, but only 2 bits will be used to store values.
+If you will use up to 32 variables each one with a width of 1 bit, then also the status structure will use 4 bytes. However as soon as you have 33 variables, it will allocate the next slot of the memory and it will start using 8 bytes.
+---------------------------------------------------------------------
+#include <stdio.h>
+#include <string.h>
+
+/* define simple structure */
+struct {
+   unsigned int widthValidated;
+   unsigned int heightValidated;
+} status1;
+
+/* define a structure with bit fields */
+struct {
+   unsigned int widthValidated : 1;
+   unsigned int heightValidated : 1;
+} status2;
+ 
+int main( ) {
+
+   printf( "Memory size occupied by status1 : %d\n", sizeof(status1));
+   printf( "Memory size occupied by status2 : %d\n", sizeof(status2));
+
+   return 0;
 }
-表示a只占了一个位
+---------------------------------------------------------------------
+output:
+---------------------------------------------------------------------
+Memory size occupied by status1 : 8
+Memory size occupied by status2 : 4
+---------------------------------------------------------------------
+Declaration
+struct {
+    type [member_name] : width;
+}
 
-我们环境下int 和char 都是有符号的. 位数只有一位时只能表示0和－1，即高位表示负数
 
-标准库
+Endianness refers to the sequential order used to numerically interpret a range of bytes in computer memory as a larger, composed word value
+e.g.
+Suppose we have a 32 bit quantity, written as 90AB12CD
+Big Endian:
+    Address Value
+    1000    90
+    1001    AB
+    1002    12
+    1003    CD
+
+Little Endian:
+    Address Value
+    1000    CD
+    1001    12
+    1002    AB
+    1003    90
+
+
+Standard library
     1.stdio.h
     2.stdlib.h
-    3.string.h /*把所有函数看一遍 */
+    3.string.h
 
-md5sum 文件1  文件2 如果校验码一致，则基本一样
+md5sum -compute and check MD5 message digest
+e.g.
+md5sum file1 file2 file3 > hash.md5
+Files are identical if their hashes are the same
 
-echo $? 查看上个命令的返回值
-
-int main(void)
-{
-    system("ls");
-    return 0;
-}
-
-system("命令")调用shell命令
+system - execute a shell command
+---------------------------------------------------------------------
+#include <stdlib.h>
+int system(const char *command);
+---------------------------------------------------------------------
