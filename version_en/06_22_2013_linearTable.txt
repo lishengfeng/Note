@@ -1,32 +1,70 @@
 2013/06/22
-1.线性表 
-    (依赖于1.内存本身就是线性的,2.逻辑上也是线性的)
-    例如：数组
-    优点:1.简单直观
-         2.查找速度快
-    缺点:1.大小难确定
-        2.中间增加,下标改动大
-            3.中间删除
-2.线性表的链式存储结构(链表)
-    定义结构体
+Data Structure
+Linear Data Structure
+    Array
+    Linked List
+    Stack
+    Queue
+
+Linked List (Singly linked list) - Singly linked lists contain nodes which have a data field as well as a 'next' field, which points to the next node in line of nodes. Operations that can be performed on singly linked lists include insertion, deletion and traversal.
+    ------------------------------              ------------------------------
+    |              |             |            \ |              |             |
+    |     DATA     |     NEXT    |--------------|     DATA     |     NEXT    |
+    |              |             |            / |              |             |
+    ------------------------------              ------------------------------
+e.g.
     struct A{
         data;
         pointer;
     }
-    例:struct studert{
+    struct studert{
         int id;
         char name[12];
         int math;
         struct student *p;
     }
-    缺点:比顺序表查找速度慢
-    优点:查,增,改,拓展容易
 
-    2.1 单链表(数据域和指针域)
-        指针域放后继的地址；
-        最后一个指针域指针放NULL
-        优缺点:找后继难,找前驱难
-        有头链表和无头链表: 指针指向的第一个是有数据域就是无头的，而指向的第一个是无数据域的只有指针域的，则是无头的
-        
+Doubly linked list - In a 'doubly linked list', each node contains, besides the next-node link, a second link field pointing to the 'previous' node in the sequence. The two links may be called 'forward('s') and 'backwards', or 'next' and 'prev'('previous').
+ -------------        --------------------------------------------              --------------------------------------------
+ |           |/        |             |              |             |/           \ |             |              |             |
+ |           |---------|  PREVIOUS   |     DATA     |     NEXT    |--------------|  PREVIOUS   |     DATA     |     NEXT    |
+ |           |\        |             |              |             |\           / |             |              |             |
+ -------------        --------------------------------------------              --------------------------------------------
 
-    
+Multiply linked list - In a 'multiply linked list', each node contains two or more link fields, each field being used to connect the same set of data records in a different order (e.g., by name, by department, by date of birth, etc.). While doubly linked lists can be seen as special cases of multiply linked list, the fact that the two orders are opposite to each other leads to simpler and more efficient algorithms, so they are usually treated as a separate case.
+
+Circular Linked list - In the last node of a list, the link field often contains a null reference, a special value used to indicate the lack of further nodes. A less common convention is to make it point to the first node of the list; in that case the list is said to be 'circular' or 'circularly linked'; otherwise it is said to be 'open' or 'linear'.
+    ------------------------------              ------------------------------
+    |              |             |            \ |              |             |
+    |     DATA     |     NEXT    |--------------|     DATA     |     NEXT    |
+    |              |             |            / |              |             |
+    ------------------------------              ------------------------------
+                  ^                                                   v
+                  |                                                   |
+                  -----------------------------------------------------
+
+Array vs. Linked List
+Both Arrays and Linked List can be used to store linear data of similar types, but they both have some advantages and disadvantages over each other.
+
+Following are the points in favour of Linked Lists.
+
+(1) The size of the arrays is fixed: So we must know the upper limit on the number of elements in advance. Also, generally, the allocated memory is equal to the upper limit irrespective of the usage, and in practical uses, upper limit is rarely reached.
+
+(2) Inserting a new element in an array of elements is expensive, because room has to be created for the new elements and to create room existing elements have to shifted.
+
+For example, suppose we maintain a sorted list of IDs in an array id[].
+
+id[] = [1000, 1010, 1050, 2000, 2040, …..].
+
+And if we want to insert a new ID 1005, then to maintain the sorted order, we have to move all the elements after 1000 (excluding 1000).
+
+Deletion is also expensive with arrays until unless some special techniques are used. For example, to delete 1010 in id[], everything after 1010 has to be moved.
+
+So Linked list provides following two advantages over arrays
+1)  Dynamic size
+2)  Ease of insertion/deletion
+
+Linked lists have following drawbacks:
+1)  Random access is not allowed. We have to access elements sequentially starting from the first node. So we cannot do binary search with linked lists.
+2)  Extra memory space for a pointer is required with each element of the list.
+3)  Arrays have better cache locality that can make a pretty big difference in performance.
