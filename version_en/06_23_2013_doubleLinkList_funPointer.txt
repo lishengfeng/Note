@@ -1,30 +1,148 @@
 2013/06/23
 
-1.双链表
+1.Variable-length structure
+    A structure's length is determined when compiling. We need to do some tricks
 
-2.可变长结构体:原理->每次malloc申请时的内存地址都是连续的,*char只占一个字符
-    a.栈区定义一个指针接收malloc申请的地址
-    b.堆区通过malloc申请需要的内存空间
+    typedef struct {
+        int length;
+        char data[1];
+    } test;
 
-3.  void* 能接收所有类型,但是测不出大小
-    内存每次以四字节处理,所以一定是4的倍数,char[1]占四个字节，char[5]占八个字节
-4.指针函数
-    函数名本身就是一个函数的首地址,函数名不可以改指向
-    函数也是有类型的,函数的类型,看头(参数和返回值  ),不看函数体
-    void fun1();
-    void fun2();
-
-    void (*p)();  这就能指向 void funName()类型的函数
-    p1=fun1;
-    p1();//调用
-    p1=fun2;
-    p1();//
-
-    作用:函数指针作为参数
-
-    int add(int a,int b);
-    int sub(int a,int b);
-    int Math(int a,int b,int (*p)(int,int))
-    {
-        return p(a,b);
+    void main() {
+        int length = 100;
+        test* p = (test*)malloc(sizeof(test) + length); 
+        p->length = length;
+        //then p->data could be used as a buffer whose length is 100
     }
+
+3. void* : pointers to data of an unspecified type
+    A program can probably convert a pointer to any type of data (exception a function pointer) to a pointer to void and back to the original type without losing information.
+    Only data pointer. void* can hold any data pointer, but not function pointers.
+    The size of a void* is a platform dependent value. Typically it's value is 4 or 8 for 32 and 64 bit platforms respectively. If you are getting 2 as the value then your likely running on a 16 bit coding platform (or potentially have a coding error).
+
+4. why char actually occupies 4bytes in memory? It's because of ByteAlignment
+    (32 bit microprocessors)
+    Memory is accessed by performing 32 bit bus cycles. 32 bit bus cycles can however be performed at addresses that are divisible by 4.(1 byte 8 bits)
+              Byte 0 Byte 1 Byte 2  Byte 3
+              0x1000               
+              0x1004  X0     X1     X2      X3
+              0x1008               
+              0x100C         Y0     Y1      Y2
+    If it had stored them in 4-byte, 1-byte and 4-byte form, it would have taken 2 cpu cycles to retrieve int c and some bit-shifting to get the actual value of c aligned properly for use as an int.
+    char[1] occupies 4bytes while char[5] occupies 8 bytes.
+
+5.Function Pointer
+    In C, like normal data pointers (int *, char *, etc), we can have pointers to functions. Following is a simple example that shows declaration and function call using function pointer.
+------------------------------------------------------------------------------
+#include <stdio.h>
+    // A normal function with an int parameter
+    // and void return type
+    void fun(int a)
+{
+    printf("Value of a is %d\n", a);
+}
+ 
+int main()
+{
+    // fun_ptr is a pointer to function fun() 
+    void (*fun_ptr)(int) = &fun;
+ 
+    /* The above line is equivalent of following two
+              void (*fun_ptr)(int);
+                     fun_ptr = &fun; 
+                         */
+ 
+    // Invoking fun() using fun_ptr
+    (*fun_ptr)(10);
+ 
+    return 0;
+}
+------------------------------------------------------------------------------
+Output:
+Value of a is 10
+------------------------------------------------------------------------------
+1) Unlike normal pointers, a function pointer points to code, not data. Typically a function pointer stores the start of executable code.
+2) Unlike normal pointers, we do not allocate de-allocate memory using function pointers.
+3) A function’s name can also be used to get functions’ address. For example, in the below program, we have removed address operator ‘&’ in assignment. We have also changed function call by removing *, the program still works.
+------------------------------------------------------------------------------
+#include <stdio.h>
+// A normal function with an int parameter
+// and void return type
+void fun(int a)
+{
+    printf("Value of a is %d\n", a);
+}
+ 
+int main()
+{ 
+    void (*fun_ptr)(int) = fun;  // & removed
+ 
+    fun_ptr(10);  // * removed
+ 
+    return 0;
+}
+------------------------------------------------------------------------------
+4) Like normal pointers, we can have an array of function pointers. Below example in point 5 shows syntax for array of pointers.
+5) Function pointer can be used in place of switch case. For example, in below program, user is asked for a choice between 0 and 2 to do different tasks.
+------------------------------------------------------------------------------
+#include <stdio.h>
+void add(int a, int b)
+{
+    printf("Addition is %d\n", a+b);
+}
+void subtract(int a, int b)
+{
+    printf("Subtraction is %d\n", a-b);
+}
+void multiply(int a, int b)
+{
+    printf("Multiplication is %d\n", a*b);
+}
+ 
+int main()
+{
+    // fun_ptr_arr is an array of function pointers
+    void (*fun_ptr_arr[])(int, int) = {add, subtract, multiply};
+    unsigned int ch, a = 15, b = 10;
+ 
+    printf("Enter Choice: 0 for add, 1 for subtract and 2 "
+                        "for multiply\n");
+    scanf("%d", &ch);
+ 
+    if (ch > 2) return 0;
+ 
+    (*fun_ptr_arr[ch])(a, b);
+ 
+    return 0;
+}
+------------------------------------------------------------------------------
+Output:
+    Enter Choice: 0 for add, 1 for subtract and 2 for multiply
+    2
+    Multiplication is 150 
+------------------------------------------------------------------------------
+6) Like normal data pointers, a function pointer can be passed as an argument and can also be returned from a function.
+For example, consider the following C program where wrapper() receives a void fun() as parameter and calls the passed function.
+------------------------------------------------------------------------------
+// A simple C program to show function pointers as parameter
+#include <stdio.h>
+ 
+// Two simple functions
+void fun1() { printf("Fun1\n"); }
+void fun2() { printf("Fun2\n"); }
+ 
+// A function that receives a simple function
+// as parameter and calls the function
+void wrapper(void (*fun)())
+{
+    fun();
+}
+ 
+int main()
+{
+    wrapper(fun1);
+    wrapper(fun2);
+    return 0;
+}
+------------------------------------------------------------------------------
+Link: http://www.geeksforgeeks.org/function-pointer-in-c/
