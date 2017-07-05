@@ -1,17 +1,70 @@
 2013/06/30
 
-malloc 分配内存
-realloc 重新分配内存 原先数据不丢失,可以加大内存，或者减少内存
+malloc, free, calloc, realloc - allocate and free dynamic memory
+SYNOPSIS
+       #include <stdlib.h>
 
-库,
-    静态库  生成后是完全拷贝代码, 所以生成后, 静态库删除,可执行文件也能运行
-            1.gcc -c a.c 
-                gcc -c b.c  生存a.o b.o目标文件
-            2.ar cr libjtk.a a.o    b.o    ar 生成静态库, cr中c 为创建, r为插入目标文件 (a.o,b.o)   静态库名字前必须是lib,后缀是 .a
-            3.gcc -o main main.c -L -ljtk   生成可执行文件 -L表示使用静态库    -l表示静态库   jtk为库名
-    动态库 如果把.so删除，则程序无法执行
-            1.gcc -c a.c
-                gcc -c b.c 
-            2. gcc -shared -fPIC -o libhello.so   -shared表明为动态库   -fPIC表示与地址无关
-            3.将 libhello.so复制到根目录的lib文件夹中
-            4.gcc main.c -lhello -o main;
+       void *malloc(size_t size);
+       void free(void *ptr);
+       void *calloc(size_t nmemb, size_t size);
+       void *realloc(void *ptr, size_t size);
+DESCRIPTION
+       The malloc() function allocates size bytes and returns a pointer to the allocated memory.  The memory is not initialized.  If size is 0, then malloc() returns either NULL, or a unique pointer value that can later be successfully passed to free().
+
+       The  free()  function  frees  the memory space pointed to by ptr, which must have been returned by a previous call to malloc(), calloc(), or realloc().  Otherwise, or if free(ptr) has already been called before, undefined behavior occurs.  If ptr is NULL, no
+       operation is performed.
+
+       The calloc() function allocates memory for an array of nmemb elements of size bytes each and returns a pointer to the allocated memory.  The memory is set to zero.  If nmemb or size is 0, then calloc() returns either NULL, or a unique pointer value that  can
+       later be successfully passed to free().
+
+       The  realloc()  function changes the size of the memory block pointed to by ptr to size bytes.  The contents will be unchanged in the range from the start of the region up to the minimum of the old and new sizes.  If the new size is larger than the old size,
+       the added memory will not be initialized.  If ptr is NULL, then the call is equivalent to malloc(size), for all values of size; if size is equal to zero, and ptr is not NULL, then the call is equivalent to free(ptr).  Unless ptr is NULL, it  must  have  been
+       returned by an earlier call to malloc(), calloc() or realloc().  If the area pointed to was moved, a free(ptr) is done.
+
+Library (must start with the three letters "lib" and have the suffix .a or .so)
+
+    Static libraries are .a files. All the code relating to the library is in this file, and it is directly linked into the program at compile time. A program using a static library takes copies of the code that it uses from the static library and makes it part of the program. (The code is extracted from the library by the linker and used to build the the final executable at the point you compile/build your application. The final executable has no dependencies on the library at run time)
+    Shared libraries are .so files. All the code relating to the library is in this file, and it is referenced by programs using it at run-time. A program using a shared library only makes reference to the code that it uses in the shared library. (The compiler/linker checks that the names you link with exist in the library when the application is built, but doesn't move their code into the application. At run time, the shared library must be available.)
+
+    Advantages and Disadvantages
+    Shared libraries reduce the amount of code that is duplicated in each program that makes use of the library, keeping the binaries small. It also allows you to replace the shared object with one that is functionally equivalent, but may have added performance benefits without needing to recompile the program that makes use of it. Shared libraries will, however have a small additional cost for the execution of the functions as well as a run-time loading cost as all the symbols in the library
+    need to be connected to the things they use. Additionally, shared libraries can be loaded into an application at run-time, which is the general mechanism for implementing binary plug-in systems.
+
+    Static libraries increase the overall size of the binary, but it means that you don't need to carry along a copy of the library that is being used. As the code is connected at compile time there are not any additional run-time loading costs. The code is simply there.
+
+Creating static libraries in C/C++ (Link:https://en.wikipedia.org/wiki/Static_library)
+For example, to create an archive from files class1.o, class2.o, class3.o, the following command would be used:
+    ar rcs libclass.a class1.o class2.o class3.o
+to compile a program that depends on class1.o, class2.o, and class3.o one could do:
+    gcc main.c libclass.a
+or (if libclass.a is placed in standard library path, like /usr/local/lib)
+    gcc main.c -lclass
+or (if libclass.a is not placed in standard library path, like /test/lib)
+    gcc main.c -L[path] -lclass
+or (during linking)
+    ld ... main.o -lclass ...
+
+    ar - create, modify, and extract from archives
+        c   Create the archive.
+        r   Insert the files member... into archive (with replacement).
+        s   Add an index to the archive, or update it if it already exists.
+
+Build a shared library using GCC
+
+Step 1: Compiling with Position Independent Code
+We need to compile our library source code into position-independent code (PIC)
+    gcc -c -fpic foo.c
+Step 2: Creating a shared library from an object file
+Now we need to actually turn this object file into a shared library. 
+    gcc -shared -o libfoo.so foo.o
+Step 3: Making the library available at runtime
+    1.move or copy the libfoo.so to /lib/
+    2.export the directory path
+        echo $LD_LIBRARY_PATH
+        LD_LIBRARY_PATH=/home/username/directory:$LD_LIBRARY_PATH
+        (In Linux, if you don't export the changes to an environment variable, they won't be inherited by the child processes. The loader and our test program did't inherit the changes we made.)
+        export LD_LIBRARY_PATH=/home/username/foo:$LD_LIBRARY_PATH
+Step 4: Linking with a shared library (-L to tell gcc where to find the shared library if the .so file is not in /lib/)
+    gcc -L/home/username/directory -o test,w main.c -lfoo
+Step 5: Run it
+    ./test
