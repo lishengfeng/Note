@@ -1,5 +1,24 @@
 2013/06/29
 
-1.cd /
-    find -name list.h   寻找内核链表的路径(先得到根)
-2.内联函数  将调用的内联函数的代码直接复制到代码区,而不是调用,对于重复调用的函数,效率更高
+1.Linux kernel's list.h
+    Linux kernel is mostly written in the C language. Unlike many other language C does not have a good collection of data structures built into it or supported by a collection of standard libraries. Therefore, you're probably excited to hear that you can borrow a good implementation of a circularly-linked list in C from the Linux kernel source tree.
+    The file include/linux/list.h in the source tree implements a type oblivious, easy-to-use, circularly-linked list in the C language. The implementation is efficient and portable-- otherwise it would not have made it into the kernel. Whenever someone needs a list in the Linux kernel they rely on this implementation to strung up any data structure they have. With very little modifications (removing hardware prefetching of list items) we can also use this list in our applications. A usable
+    version of this file is available here for download. 
+
+    Some of the advantages of using this list are:
+    Type Oblivious:
+    This list can be used to strung up any data structure you have in mind.
+    Portable:
+    Though I haven't tried in every platform it is safe to assume the list implementation is very portable. Otherwise it would not have made it into the kernel source tree.
+    Easy to Use:
+    Since the list is type oblivious same functions are used to initialize, access, and traverse any list of items strung together using this list implementation.
+    Readable:
+    The macros and inlined functions of the list implementation makes the resulting code very elegant and readable.
+    Saves Time:
+    Stops you from reinventing the wheel. Using the list really saves a lot of debugging time and repetitively creating lists for every data structure you need to link.
+You can use the command below to find where the list.h is.
+    find / -name list.h
+
+2.Inline Functions
+    In the C and C++ programming languages, an inline function is one qualified with the keyword "inline"
+    The point of making a function inline is to hint to the compiler that it is worth making some form of extra effort to call the function faster than it would otherwise - generally by substituting the code of the function into its caller. As well as eliminating the need for a call and return sequence, it might allow the compiler to perform certain optimizations between the bodies of both functions.
