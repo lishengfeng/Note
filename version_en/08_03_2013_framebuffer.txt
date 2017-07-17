@@ -1,11 +1,10 @@
 2013/08/03
 
-framebuffer
+Framebuffer - A portiona of RAM containing a bitmap that drives a video display from a memory buffer containing a complete frame of data.
     vim /etc/grub.conf
-    在kernal的末尾添加 vga=0x317
-    将framebuffer文件拷贝到/下(非必须，好寻找)
-    重启，如果/etc/fb0存在 在配置成功
-    ctrl+alt+f5  进入命令界面  登录 －> 进入framebuffer －> ./main 出绿图，成功
-
+    Add vga=0x317 to the line starting with "kernel"
+    Copy the folder "framebuffer" to root / (not necessary, easy to find)
+    Restart system. File "/etc/fb0" existing means configurate successfully 
+    Ctrl+Alt+F5 to enter Terminal Shell. Log in -> enter framebuffer -> ./main (Showing green screen means success)
     cd /usr/include/linux/
     vim fb.h
