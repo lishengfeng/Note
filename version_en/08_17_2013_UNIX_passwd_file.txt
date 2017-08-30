@@ -1,71 +1,102 @@
 2013/08/17
 
-UNIX一切皆文件
-LINUX 一切皆文本文件
+"Everything is a file" describes one of the defining features of Unix, and its derivatives
+"Everythins in Linux is a text file"
 
-1.io
-2.sys
-3.ipo
-4.network
+1.io - In computing, input/output or I/O(or, informally, io or IO) is the communication between an information processing system, such as a computer. Inputs are the signals or data received by the system and outputs are the signals or data sent from it.
 
 su - root
-cat /etc/shadow
+su - switches to the superuser and sets up the environment so that it looks like they logged in directly. su root switches to the user named root and doesn't simulate directly logging in.
+If the superuser is named root, then su and su root are equivalent (and don't simulate directly logging in), as are su - and su - root (which do).
 
-apache:!!:15929:0:99999:7:::
-sa:$1$umIm.YuA$EQ7wb7lVQo3.jLCxWgwf81:15934:0:99999:7:::
+cat /etc/shadow - Store actual password in encrypted format for user's account with additional properties related to user password i.e. it stores secure user account information. All fieldsare separated by a colon(:) symbol. It contains one entry per line for each user listed in /etc/passwd file. Generally, shadow file entry looks as follows
+---------------------------------------------------------------------------------------------------------------------------------
+lester:$6$Mbz2J1Y/$3Xswv7SLi4skATn6cw1nwOOjq9PQu.WZ3QpsiT8b4KYpEXokWAsnkSCAtOYwUCQRX26jPTyU.EZ/5627HTmoF/:16809:0:99999:7:::
+______    ______________________________________________________________________________________________  _____ _ _____ _
+  |                                                       |                                                 |   |   |   |
+  v                                                       v                                                 v   v   v   v
+  1                                                       2                                                 3   4   5   6
+---------------------------------------------------------------------------------------------------------------------------------
+1.Username : It is your login name.
+2.Password : It is your encrypted password. The password should be minimum 6-8 characters long including special characters/digits and more.
+3.Last password change (lastchanged) : Days since Jan 1, 1970 that password was last changed
+4.Minimum : The minimum number of days required between password changes i.e. the number of days left before the user is allowed to change his/her password
+5.Maximum : The maximum number of days the password is valid (after that user is forced to change his/her password)
+6.Warn : The number of days before password is to expire that user is warned that his/her password must be changed
+7.Inactive : The number of days after password expires that account is disabled
+8.Expire : days since Jan 1, 1970 that account is disabled i.e. an absolute date specifying when the login may no longer be used.
 
-其中 15929为1970.1.1日(元年)到今天的时间 (时间戳)
-第二条为密码
+cat /etc/passwd - Store essential information, which is required during login i.e. user account information. /etc/passwd is a text file, that contains a list of the system’s accounts, giving for each account some useful information like user ID, group ID, home directory, shell, etc. It should have general read permission as many utilities, like ls use it to map user IDs to user names, but write access only for the superuser/root account.
 
-cat /etc/passwd
-存储用户信息
+BCPL   Basic computer program language 1973
 
-BCPL   Basic computer program language1973   
-
-c <-> UNIX(一类操作系统)
-
-GNU GNU is not UNIX      
+GNU - GNU is not UNIX      
+GNU is an operating system that is free software--that is, it respects users' freedom. The developerment of GNU made it possible to use a computer without software that ould trample your freedom.
 
 uname -a   GUN/Linux 
 
-GPL  你所被授权的, 也必须要授权给别人
-BSD  随意
+GNU licence type
 
-进程：正在执行的程序
-程序：可以执行的文件
+GPL - Basically, you're allowed to use, redistribute and change the software, but any changes you make must also be licensed under the GPL. So that means you have to give everyone else the same rights as you got. Fair's fair, right?
+BSD - The BSD basically says "here's the source code, do whatever you want with it, but if you have problems, it's your problem". That means you can take BSD'ed code and turn it into a proprietary application if you so wish - there's nothing saying you have to give the code back (although it is nice to do so).
 
-cat !$ 上一条命令的最后一个参数 history中的一个命令
-history 历史命令
-w 查看当前tty
+Difference between a process and a program
+A program is a set of instructions that are to perform a designated task, where as the process is an operation which takes the given instructions and perform the manipulations as per the code, called ‘execution of instructions’. A process is entirely dependent of a ‘program’.
+
+history - Display or manipulate the history list
+w - show who is logged on and what they are doing.
 
 echo > asa;sdkfj > /dev/pts/1
 
-/dev/    设备信息
-ps 可以查看进程pid
-/proc/   进程信息 文件名为pid  里面有个fs为文件描述符
-系统调用均在 man 2 *** 下
-vim中noh取消高亮
+/dev is the location of special or device files.
 
-echo $? 返回上个命令的成功与否,成功为0,失败为非零(1～255)(*128~255为预留给系统调用),失败具体值在代码中的exit(1)控制,其中1就会是失败时的退出码
-kill -l   其中ctrl+c 为 2)SIGINT  直接kill为 15)     如果是系统打断一般为 128+信号的编号  例如： ctrl+c -> echo $? 返回 130 即128+2
-kill 的信号0 实际无操作,通过不同返回值来确定是否存在某个进程
-wc 统计文件信息
-空洞文件 用lseek实现  并不实际占用空间   ls并不能显示实际分配大小,du可以
+ps - report a snapshot of the current processes.
+
+/proc is very special in that it is also a virtual filesystem. It's sometimes referred to as a process information pseudo-file system. It doesn't contain 'read' files but runtime system information(e.g. system memory, devices mounted, hardware configuration, etc).
+
+man (NUM) - manual sections
+    The standard sections of the manual include:
+    1. User commands
+    2. System calls
+    3. C library functions
+    4. Devices and Special files
+    5. File Formats and Conventions
+    6. Games et. al.
+    7. Miscellanea
+    8. System Administration tools and Daemons
+
+vim :noh to set no highlight
+
+echo $? echo the return code from the last run process. Some exit codes such as 1-2, 126-165, and 255 have special meaning, and should therefore be avoided for user-specified parameters.
+
+kill 0 $pid - man 2 kill
+    If sig is 0, then no signal is sent, but error checking is still performed;
+    this can be used to check for the existance of process ID or prcess group ID.
+    So signal 0 will not actually in fact send anything to your process's PID, but will in fact check whether you have permissions to do so.
+
+wc - print newline, word, and byte counts for each file
+
+lseek - reposition read/write file offset - can create a file with holes
+           The lseek() function allows the file offset to be set beyond the end of the file (but  this  does  not change the size of the file).  If data is later written at this point, subsequent reads of the data in the gap (a "hole") return null bytes ('\0') until data is actually written into the gap.
+
+For files, ls -l file shows(among other things) the size of file in byte, while du -k file shows the space occupied by file on disk(in units of 1kb = 1024 bytes). So du can get the file size which was created by lseek.
 
 1. IO
     sysio 
-        fd 文件描述符（数组下标）        
-              0,1,2为默认打开描述符  
-                0 -> stdin.    重定向  <
-                1-> stdout.  >　默认定向
-                2-> stderr  所以错误重定向为  2>
+        fd - file descriptor - is an abstract indicator used to access a file or other input/ouput resource such as a pipe or network socket.
+        Under normal circumstances every UNIX program has three streams opened for it when it starts up, one for input, one for output, and one for printing diagnostic or error messages.  These are typically attached to the user's terminal (see tty(4) but might instead refer to files or other devices, depending on what the parent process chose to set up.  (See also the "Redirection" section of sh(1).)
+                0 -> Standard input
+                1 -> Standard output
+                2 -> standard error
         man 2 open
         man 2 close
         man 2 read
         man 2 write
         man 2 lseek 
-             vim /usr/include/sys/types.h
-        man perror 打印系统错误信息
-    stdio 
-    advio    1).select 2).poll 3).epoll
-            
+        <sys/types.h> - data types
+        vim /usr/include/sys/types.h
+
+perror - print a system error message (man perror)
+    <stdio.h> - standard input/output library functions - man 3 stdio
+    Async IO on Linux: 1). select 2). poll 3). epoll
+        It's basically about how to monitor a lot of file descriptors for new input/output. Who needs to watch a lot of file descriptors at a time? Servers!
