@@ -1,6 +1,6 @@
 2013/08/18
     1。命令前加time可显示命令时间  1.总时间(包括其他进程占用时间) 2.用户态时间 3.系统调用时间
-    strace -c timer 命令跟踪系统进程
+    strace -c time 命令跟踪系统进程
     dd if=/dev/zero of=bigfile bs=1024 count=409600 if为原路径 of为相对路径, bs为字符流大小,count为文件大小
     推荐流大小 4096
     
