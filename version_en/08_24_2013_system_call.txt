@@ -1,38 +1,53 @@
 2013/08/24
 
-    ls /etc | wc -w
-    ps 进程信息
-    pstree 进程关系
-    www.kernel.org下载源码
+ps - report a snapshot of the current processes.
+pstree - display a tree of processes
 
-    系统调用与系统相关,而标准io 则只要支持C，则可以通用
+www.kernel.org to download the kernel source
 
-    1.utime
-    2.man 2 mkdir 创建文件夹 创建一个空文件下也会有 . 和 ..俩文件
-    3.man 2 unlink  删除文件，即删除硬连接
-    4.man remove 删除文件
-    5.man opendir ---- man 3 readdir 打开目录 --- 读取目录
-    6.rewinddir 回头dir指针
-    7.seekdir 目录指针跳动
-    8.chdir change working directory
-    9.getcwd get current working directoroy
-    10.lstat get file status
-    11. get_current_dir_name(void)
-    12.ulimit     可以查看stack size 栈空间
-    13.man syscalls  系统调用
-    系统调用比库函数效率低
-//标准库
-    标准输出为全缓冲(满了fflush)和行缓冲(遇上换行fflush)
-    标准报错 为 不缓冲
-    14.man 3 fopen
-    15.strace -c ./printf.c  查看程序中的系统调用
-    16.man setbuf (设置char *buf为NULL)则无缓冲
-        man setvbuf 可以设置全缓冲,行缓冲,不缓冲
-    17.man 3 fread 
-    18.man getline 返回一行数据
-    19.man fgets  input of characters and strings
-        man fputs output of characters and strings
-    20.atoi  将字符转int
-    21.fprintf  sprintf
-    22.man ftell
+System calls
+    How a user process contacts the Operating System
+    For advanced services that may require special privilege
+Standard I/O library
+    Generic I/O support for C programs
+    A smart wrapper around I/O-related system calls
+    Stream concept, line-by-line input, formatted output, ...
 
+utime, utimes - change file last access and modification times
+man 2 mkdir - make directories
+man 2 unlink - delete a name and possibly the file it refers to 
+man remove - remove a file or directory
+man opendir - open a directory
+man readdir - read a directory
+man rewinddir - reset directory stream
+man seekdir - set the position of the next readdir() call in the directory stream
+man chdir - change working directory
+man getcwd - get current working directory
+man lstat - get file status
+man ulimit - get and set user limits
+man syscalls - linux system calls
+
+The time consumed to execute a library function which does not in-turn invoke a system call is always lesser than the time consumed te execute a system call because the application program need not context switch between user space and kernel space.
+
+The stdout stream is buffered, So will only display what's in the buffer after it reaches a new line(or when it's told to)
+The stderr stream is unbuffered.
+
+man 3 fopen - stream open function
+
+strace -c - trace system calls and signals
+
+man setbuf - stream buffering operations
+man setvbuf - fuction may be used on any open stream to change its buffer.(unbuffered, line buffered, fully buffered)
+
+man fread, fwirte - binary stream input/output
+
+man getline, getdelim - delimited string input
+
+man fgets - input of characters and strings
+man fputs - output of characters and strings
+
+man atoi, atol, atoll - convert a string to an integer
+
+fprintf  sprintf - formatted output conversion
+
+man ftell - reposition a stream
