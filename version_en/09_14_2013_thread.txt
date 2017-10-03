@@ -1,13 +1,14 @@
 2013/09/14
 
-1.timer_create - Create a POSIX.1b interval timer clock 产生定时器(可以指定很多东西，如信号种类)/*小红帽manpage不全,可参考ubuntu*/
-2.pthread_create - thread creation  /*如果主线程退出，则子线程也被回收*/  1.线程比进程创建和销毁消耗资源少，2.共享同一个进程的地址空间(即是优点也是缺点,多进程不共享地址空间可以并发处理,而变得跟高效)
-3.pthread_join - wait for thread termination
-4.pthread_self - get the calling thread ID
-5.pthread_cleanup_pop, pthread_cleanup_push - establish 6/cancellation handlers
-7.pthread_exit - thread termination
+1.timer_create - create a POSIX
+2.pthread_create - create a new thread - 1. Thread is cheaper than process 2. Threads can share common data, they do not need to use interprocess communication.(This cheapness does not come free - the biggest drawback is that there is no protection between threads.)
+3.pthread_join - join with a terminated thread (Wait for thread specified by thread to terminate)
+4.pthread_self - obtain ID of the calling thread
+5.pthread_cleanup_pop, pthread_cleanup_push - push and pop thread cancellation clean-up handlers.
+7.pthread_exit - terminate calling thread
+
 8.make-> makefile   make filenam5e == gcc -o filename filename.c
-    vim Makefile或者 vim MAKEFILE 
+    vim Makefile vim MAKEFILE 
 ========================
 hello:hello.c
     gcc -o hello hello.c
@@ -19,20 +20,14 @@ hello.o:hello.c
     gcc -c hello.c -o hello.o
 CFLAGS=-lpthread
 ========================
-第一个为make后接的参数 ,第二个hello.c为所要用到的文件.
-第三个前必须是tab,然后是实际的操作,
-CFLAGS是统一的gcc之后所加的参数 -lpthread 表示链接pthread
-9.pthread_mutex_destroy, pthread_mutex_init - destroy  and  initialize  a mutex  互斥量
+hello:hello.c                   - arg1: the argment followed by make command. arg2: source
+    gcc -o hello hello.c        - start with a tab, then the real command
+CFLAGS used by all the gcc commands, -lpthread - link pthread
 
-10.pthread_mutex_lock, pthread_mutex_trylock, pthread_mutex_unlock -  lock and unlock a mutex 互斥锁
+9.pthread_mutex_destroy, pthread_mutex_init - destroy  and  initialize  a mutex
 
-11.pthread_exit - thread termination 线程退出
+10.pthread_mutex_lock, pthread_mutex_trylock, pthread_mutex_unlock -  lock and unlock a mutex
 
-12.pthread_cond_destroy, pthread_cond_init - destroy and initialize condition variables 条件通知
+12.pthread_cond_destroy, pthread_cond_init - destroy and initialize condition variables
 
-13.pthread_cond_timedwait, pthread_cond_wait - wait on a condition 条件等待
-
-
-
-
-
+13.pthread_cond_timedwait, pthread_cond_wait - wait on a condition
