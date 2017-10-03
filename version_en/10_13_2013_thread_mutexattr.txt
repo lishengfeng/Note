@@ -1,6 +1,8 @@
 2013/10/13
- pthread_detach - detach a thread    pthread_join is no needed
- pthread_rwlock_destroy, pthread_rwlock_init - destroy and initialize  a read-write lock object
- pthread_attr_init,  pthread_attr_destroy  - initialize and destroy thread attributes object
- pthread_mutexattr_destroy,   pthread_mutexattr_init  - destroy and initialize the mutex attributes object
+pthread_detach - detach a thread - When a detached thread terminates, its resources are automatically released back to the system without the need for another thread to join with the terminated thread.
 
+pthread_rwlock_destroy, pthread_rwlock_init - destroy and initialize  a read-write lock object
+
+pthread_attr_init,  pthread_attr_destroy  - initialize and destroy thread attributes object
+
+pthread_mutexattr_destroy,   pthread_mutexattr_init  - destroy and initialize the mutex attributes object
