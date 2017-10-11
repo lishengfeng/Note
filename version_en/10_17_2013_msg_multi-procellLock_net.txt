@@ -1,40 +1,41 @@
 2013/10/27
- msgget - get a message queue identifier
-   ftok  - convert a pathname and a project identifier to a System V IPC key
- msgctl - message control operations
- msgrcv, msgsnd - message operations 接收端会阻塞如果没有消息
- ipcs 查看创建的系统的消息队列
- ipcrm  - remove a message queue, semaphore set or shared memory id 命令删除一个消息队列
- 
- 用于多进程的互斥锁(无论线程还是进程都可以用)
- semget - get a semaphore set identifier
- semctl - semaphore control operations
- semop, semtimedop - semaphore operations
+msgget - get a System V message queue identifier
+ftok  - convert a pathname and a project identifier to a System V IPC key
+msgctl - message control operations
+msgrcv, msgsnd - message queue operations
+ipcs - show information on IPC facilities
+ipcrm  - remove certain IPC resources
 
- mutex用于线程的互斥锁
+semget - get a semaphore set identifier
+semctl - semaphore control operations
+semop, semtimedop - semaphore operations
 
- shmat, shmdt - shared memory operations 共享内存
+shmat, shmdt - shared memory operations
 
-网络编程
- netstat -anup / -antp (查看网络状态)
- socket - create an endpoint for communication
- man 2 bind - bind a name to a socket
- listen - listen for connections on a socket
+Net Programming
 
- SOCK_STREAM 面向连接可靠  （TCP）
-  面向连接:1.双方都处于连接状态
-          2.包按照顺序
- SOCK_DGRAM (UDP) 不保证顺序(概率很低) 把每个当作独立的报文处理 
+netstat -anup / -antp - Print network connections, routing tables, interface statistics, masquerade connections, and multicast memberships
+socket - create an endpoint for communication
+man 2 bind - bind a name to a socket
+listen - listen for connections on a socket
 
- vim /etc/protocols 关于协议代号
+Stream socket:
 
- bzero - write zero-valued bytes   网络编程必须，对addr清零
+In computer operating systems, a stream socket is a type of interprocess communications socket or network socket which provides a connection-oriented, sequenced, and unique flow of data without record boundaries, with well-defined mechanisms for creating and destroying connections and for detecting errors.
+A stream socket transmits data reliably, in order, and with out-of-band capabilities.
+On the Internet, stream sockets are typically implemented on top of TCP so that applications can run across any networks using TCP/IP protocol. SCTP may also be used for stream sockets.
 
- man -k so 查找前面两个字母为so的所有命令 
- man htonl,  htons,  ntohl,  ntohs - convert values between host and network 用于port的取得将主机端口转换成网络字端口
- 一般自定义端口不用1024一下，因为1024一般已经分配给了各个协议，作为周之的端口如80,21等等
- 
+Datagram socket:
+In computer operating systems, a datagram socket is a type of interprocess communications socket or network socket which provides a connectionless point for sending or receiving data packets.[1] Each packet sent or received on a datagram socket is individually addressed and routed. Order and reliability are not guaranteed with datagram sockets, so multiple packets sent from one machine or process to another may arrive in any order or might not arrive at all.
+The sending of UDP broadcasts on a network are always enabled on a datagram socket. In order to receive broadcast packets, a datagram socket should be bound to the wildcard address. Broadcast packets may also be received when a datagram socket is bound to a more specific address.
 
-       byte order
+Internet (IP) protocols
+vim /etc/protocols
 
+bzero - write zero-valued bytes - The bzero() function sets the first n bytes of the area starting at s to zero (bytes containing '\0').
 
+man -k so: Search all commands starting with so
+    Search the short descriptions and manual page names for the keyword printf as regular expression.  Print out any matches.  Equivalent to apropos printf.
+man htonl,  htons,  ntohl,  ntohs - convert values between host and network
+
+Byte order
