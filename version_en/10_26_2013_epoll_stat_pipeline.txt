@@ -1,17 +1,14 @@
 2013/10/26
 
- poll  RETURN POLLPRI 非数据,包里的一些额外携带的操作
- epoll epoll_create epoll_ctl epoll_wait
- mmap - map or unmap files or devices into memory
- stat, fstat, lstat - get file status
- aio_read - asynchronous read
- aio_write - asynchronous write
- 管道  一读一写  要么就在中间阻塞
- 命名管道7
- mkfifo
- mkfifo - make FIFOs (named pipes) 
- 匿名管道
- man 2 pipe - create pipe
- popen, pclose - pipe stream to or from a process
-
-
+poll, ppoll - wait for some event on a file descriptor
+epoll - I/O event notification facility
+epoll_create - open an epoll file descriptor
+epoll_ctl - control interface for an epoll file descriptor
+epoll_wait - wait for an I/O event on an epoll file descriptor
+mmap - map or unmap files or devices into memory
+stat, fstat, lstat - get file status
+aio_read - asynchronous read
+aio_write - asynchronous write
+mkfifo - make FIFOs (named pipes) 
+man 2 pipe - create pipe
+popen, pclose - pipe stream to or from a process
