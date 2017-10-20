@@ -1,22 +1,27 @@
 2013/11/2
- 网络：7层 -> 从底层到高层 物理层(网线颜色排序)->链路层(ethernet以太网/PPPoE(PPP over ethernet))->网络层(IP/IPV6)->传输层(TCP/UDP/SCTP)->{绘图层->表示层}->应用层(http、ftp、DNS)
- man 2 accept  -  accept  a  connection  on a socket   listen后由accept负责产生一个新端口描述符与客户端通信，而listen描述符继续监听
- accept 之前先将需要回填的长度赋初值 clilen = sizeof(cliaddr)
- telnet / nc 模仿客户端行为 telnet / nc 127.0.0.1 8888
- 
- 连接是三次握手，关闭是四次挥手
- 服务端和客户端为了可靠的关闭连接会有一个time wait状态，尽量保证不会因为丢包而没关闭
- inet_ntop  -  convert  IPv4  and  IPv6 addresses from binary to text form
- inet_pton  -  convert  IPv4  and  IPv6 addresses from text to binary form
- getsockopt,  setsockopt  - get and set options on sockets
+OSI model
+Open System Interconnection model
+Layer 1:Physical Layer - e.g. electrical cable
+Layer 2:Data Link Layer
+Layer 3:Network Layer
+Layer 4:Transport Layer
+Layer 5:Session Layer
+Layer 6:Presentation Layer
+Layer 7:Application Layer
 
- 并发
- accept 后fork一个子进程去处理，父进程监听
+man 2 accept  -  accept  a  connection  on a socket
+    before accepting, clilen = sizeof(cliaddr) is needed.
+telnet / nc simulate client's behavier. e.g. telnet / nc 127.0.0.1 8888
 
- 网络上一般不用read/write直接操作描述符,因为网络甚至没有缓存，一般用send/recv
- send, sendto, sendmsg - send a message on a socket
- recv, recvfrom, recvmsg - receive a message from a socket
- 关闭一般用shutdown代替close ，因为shutdown可以实现只关闭一半
- abort - cause abnormal process termination
+inet_ntop  -  convert  IPv4  and  IPv6 addresses from binary to text form
+inet_pton  -  convert  IPv4  and  IPv6 addresses from text to binary form
+getsockopt,  setsockopt  - get and set options on sockets
 
+Concurrence
+fork a subprocess to handle, parent process keep listening after accepting.
 
+Network programming use send/recv instead of read/write as network doesn't have cache
+send, sendto, sendmsg - send a message on a socket
+recv, recvfrom, recvmsg - receive a message from a socket
+shutdown is a flexible way to block communication in one or both directions. When the second parameter is SHUT_RDWR, it will block both sending and receiving (like close). However, close is the way to actually destroy a socket.
+abort - cause abnormal process termination
